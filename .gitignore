@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets & service keys - NEVER commit these
+servicerole.txt
+*.service-role*.txt
+.env.local
+
+# scratch / working notes
+error.txt
+fix it.txt
+full system infromation details.txt
+Process_function.txt
+start.bat
+github.txt
+Accountest.txt
+
+# local dev logs
+dev-server.log
+*.log

@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scholarship Management System
 
-## Getting Started
+A full-stack scholarship management system for a college (SPC). Students apply to
+scholarship programs, submit supporting documents and CHED application forms, and are
+ranked by a Machine Learning (Random Forest) model written in TypeScript. CHED personnel
+and an Administrator review, approve, and notify applicants.
 
-First, run the development server:
+## Tech Stack
+
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, TypeScript
+- **Database & Auth:** Supabase (PostgreSQL + RLS)
+- **ML Ranking:** Random Forest Classifier implemented in TypeScript (no external ML server)
+
+The Random Forest model is implemented in pure TypeScript (`lib/ml/`) and runs inside
+Next.js API routes (`app/api/ml/`), so there is **no Python backend** to deploy. Training
+and prediction happen in a single serverless request, so it works on Vercel out of the box.
+
+## Features
+
+- **Student:** register, apply to scholarship programs, upload documents (COR, Valid ID,
+  Signature Form, Academic Record) and academic records, view application status & notifications.
+- **Admin:** manage applications (status filter, batch approve/reject/notify, notify missing
+  documents, full detail view, CSV export), run ML ranking, approve beneficiaries.
+- **CHED:** review ranking result, manage applications (mirrors Admin), approve beneficiaries,
+  export final list.
+- **Faculty:** early warning alerts and interventions.
+- **Business rule:** a student may apply to multiple programs, but approving **one** application
+  automatically marks all their other applications as **Not Approved** and notifies them.
+- **Notifications:** bell with unread badge across all dashboards.
+
+## Roles
+
+| Role | Access |
+|------|--------|
+| Student | Apply, upload docs, view status |
+| Faculty | Alerts, interventions |
+| CHED | Applications (manage), Ranking Result, Approvals |
+| Admin | Applications (manage), Ranking, Approvals, Programs, Users |
+
+## Getting Started (local)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # app on http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set the environment variables (see `DEPLOYMENT.md`). The ML ranking feature needs no
+separate server - it runs inside the Next.js app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the Vercel deployment guide.
