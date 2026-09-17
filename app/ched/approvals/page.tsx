@@ -29,6 +29,7 @@ interface Approval {
   application_id: number;
   approved_by: number;
   approval_status: string;
+  approval_date?: string;
   validation_status?: string;
 }
 
@@ -112,14 +113,23 @@ export default function ChedApprovalsPage() {
       approval_status: "Approved",
       validation_status: "Not Validated",
     });
-    setApprovingId(null);
-    if (error) { setBusyMsg(error.message); return; }
-    setApprovals((prev) => [...prev, {
+    if (error) { setApprovingId(null); setBusyMsg(error.message); return; }
+    const { error: upErr } = await sb.from("scholarship_applications")
+      .update({ application_status: "Approved" })
+      .eq("application_id", app.application_id);
+    if (upErr) { setApprovingId(null); setBusyMsg(upErr.message); return; }
+
+    const approvedRecord: Approval = {
       application_id: app.application_id,
       approved_by: chedUser.user_id,
       approval_status: "Approved",
+      approval_date: new Date().toISOString(),
       validation_status: "Not Validated",
-    }]);
+    };
+    setApprovals((prev) => [...prev, approvedRecord]);
+    setApplications((prev) => prev.map((a) =>
+      a.application_id === app.application_id ? { ...a, application_status: "Approved" } : a
+    ));
 
     const res = await autoRejectSiblings([{ application_id: app.application_id, student_id: app.student_id }], applications);
     if (res.rejectedCount > 0) {
@@ -137,23 +147,35 @@ export default function ChedApprovalsPage() {
     const sb = getSupabase();
     const { error } = await sb.from("scholarship_approval").delete().eq("application_id", appId);
     if (error) { setBusyMsg(error.message); return; }
+    const { error: upErr } = await sb.from("scholarship_applications")
+      .update({ application_status: "Pending" })
+      .eq("application_id", appId);
+    if (upErr) { setBusyMsg(upErr.message); return; }
     setApprovals((prev) => prev.filter((a) => a.application_id !== appId));
+    setApplications((prev) => prev.map((a) =>
+      a.application_id === appId ? { ...a, application_status: "Pending" } : a
+    ));
   }
 
   function exportFinalList() {
     const approvedApps = applications.filter((a) => approvalFor(a.application_id));
     if (!approvedApps.length) return;
-    const rows = approvedApps.map((a, i) => ({
-      beneficiary_no: i + 1,
-      student_number: a.student_accounts?.student_number || "",
-      name: `${a.student_accounts?.last_name}, ${a.student_accounts?.given_name}`,
-      program: a.student_accounts?.program_name || "",
-      scholarship: a.scholarship_programs?.scholarship_name || "",
-      application_date: formatDate(a.application_date),
-      status: "Approved",
-      registrar_validation: "Pending Admin Validation",
-    }));
+    const rows = approvedApps.map((a, i) => {
+      const appr = approvalFor(a.application_id);
+      return {
+        beneficiary_no: i + 1,
+        student_number: a.student_accounts?.student_number || "",
+        name: `${a.student_accounts?.last_name}, ${a.student_accounts?.given_name}`,
+        program: a.student_accounts?.program_name || "",
+        scholarship: a.scholarship_programs?.scholarship_name || "",
+        application_date: formatDate(a.application_date),
+        approval_date: formatDate(appr?.approval_date || ""),
+        status: "Approved",
+        registrar_validation: appr?.validation_status || "Pending Admin Validation",
+      };
+    });
     downloadCsv("final-approved-scholars.csv", rows);
+    setBusyMsg(`Exported ${rows.length} approved scholar(s).`);
   }
 
   function handleSendToAdmin() {
@@ -179,7 +201,12 @@ export default function ChedApprovalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Approve Beneficiaries (Process 4.0)</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Scholarships Approval List</h1>
+          <p className="mt-1 text-xs text-gray-500">
+            {approvals.length > 0 ? `${approvals.length} beneficiary(ies) already approved — send the final list to the Administrator for registrar validation and student notification.` : "Approve applicants here. Only approved scholars will appear in the final list."}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={exportFinalList}

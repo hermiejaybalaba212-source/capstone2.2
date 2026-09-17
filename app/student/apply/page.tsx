@@ -479,6 +479,7 @@ function ApplyPageContent() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900">Submit Application</h1>
+      <p className="mt-1 text-xs text-gray-500">Fill in the form and upload your requirements to apply for a scholarship.</p>
 
       {message && (
         <div

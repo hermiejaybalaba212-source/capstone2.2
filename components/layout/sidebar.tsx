@@ -52,7 +52,7 @@ export function Sidebar({ items, title, subtitle, username, userRole, onLogout, 
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] shadow-2xl transition-transform duration-300 lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[58] flex w-72 max-w-[85vw] flex-col bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] shadow-2xl transition-transform duration-300 lg:translate-x-0 lg:w-64 lg:max-w-none ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-sm font-bold text-white">SPC</div>
           <div className="min-w-0">
@@ -68,8 +68,8 @@ export function Sidebar({ items, title, subtitle, username, userRole, onLogout, 
                 <li key={item.href}>
                   <Link href={item.href} className={`group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 ${isActive ? "bg-white/15 text-white shadow-lg shadow-black/20" : "text-white/60 hover:bg-white/8 hover:text-white"}`}>
                     <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg text-[11px] transition-all ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-white/50 group-hover:bg-white/10 group-hover:text-white/80"}`}>{item.icon}</span>
-                    <span className="min-w-0 leading-tight">{item.label}</span>
-                    {item.processFn && <span className={`ml-auto flex-none rounded-md px-1 py-0.5 text-[8px] font-bold transition-all ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-white/30 group-hover:bg-white/10 group-hover:text-white/50"}`}>{item.processFn}</span>}
+                    <span className="min-w-0 flex-1 leading-snug">{item.label}</span>
+                    {item.processFn && <span className={`flex-none rounded-md px-1.5 py-0.5 text-[9px] font-bold transition-all ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-white/50"}`}>{item.processFn}</span>}
                   </Link>
                 </li>
               );

@@ -33,11 +33,28 @@ interface Notification {
   status?: string;
 }
 
+interface AppItem {
+  application_id: number;
+  application_status?: string;
+  application_date?: string;
+  scholarship_programs?: { scholarship_name?: string };
+}
+
 interface Stats {
   activePrograms: number;
   myApplications: number;
   unreadNotifications: number;
   academicRecords: number;
+}
+
+const statusNotes: Record<string, { note: string; hint: string }> = {
+  Pending: { note: "Your application is being reviewed.", hint: "You will be notified once a decision is made." },
+  Approved: { note: "Congratulations! Your application has been approved.", hint: "See your scholarship status for the next steps." },
+  "Not Approved": { note: "Your application was not approved this time.", hint: "You may contact the scholarship office for more details." },
+};
+
+function statusNote(status: string) {
+  return statusNotes[status] || { note: "Your application is being reviewed.", hint: "You will be notified once a decision is made." };
 }
 
 export default function StudentDashboardPage() {
@@ -46,9 +63,11 @@ export default function StudentDashboardPage() {
   const [fatalError, setFatalError] = useState("");
   const [verified, setVerified] = useState<boolean | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const [stats, setStats] = useState<Stats>({ activePrograms: 0, myApplications: 0, unreadNotifications: 0, academicRecords: 0 });
   const [alerts, setAlerts] = useState<EarlyWarningAlert[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [applications, setApplications] = useState<AppItem[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -111,8 +130,9 @@ export default function StudentDashboardPage() {
           .eq("status", "Open"),
         sb
           .from("scholarship_applications")
-          .select("application_id")
-          .eq("student_id", studentId),
+          .select("application_id, application_status, application_date, scholarship_programs(scholarship_name)")
+          .eq("student_id", studentId)
+          .order("application_date", { ascending: false }),
         sb
           .from("notifications_announcements")
           .select("*")
@@ -137,6 +157,7 @@ export default function StudentDashboardPage() {
 
       if (studentProfile.data) {
         const { student_number, given_name, last_name } = studentProfile.data;
+        setFirstName(given_name || "");
         try {
           const registrar = getRegistrarSupabase();
           const { data: regMatch } = await registrar
@@ -164,6 +185,7 @@ export default function StudentDashboardPage() {
 
       setAlerts((alertsQuery.data || []) as EarlyWarningAlert[]);
       setNotifications(loadedNotifications.slice(0, 5));
+      setApplications((applicationsQuery.data || []) as AppItem[]);
 
       if (!ignore) setLoading(false);
       } catch (err) {
@@ -212,6 +234,9 @@ export default function StudentDashboardPage() {
     return <Spinner label="Loading dashboard..." />;
   }
 
+  const currentStatus = applications[0]?.application_status || "";
+  const nearby = applications[0];
+
   if (fatalError) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -225,7 +250,14 @@ export default function StudentDashboardPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h1 className="text-xl font-bold text-gray-900">
+          {firstName ? <>Welcome back, {firstName}!</> : <>Welcome back!</>}
+        </h1>
+        <p className="mt-1 text-xs text-gray-500">
+          Here is a quick look at your scholarship journey and any updates for you.
+        </p>
+      </div>
 
       {verified === false && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 shadow-sm">
@@ -249,6 +281,92 @@ export default function StudentDashboardPage() {
           value={stats.academicRecords}
           tone={alerts.length > 0 ? "red" : "maroon"}
         />
+      </section>
+
+      {currentStatus && (
+        <section className="mt-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Your Scholarship Status</p>
+                <h2 className="mt-1 text-base font-bold text-gray-900">
+                  {nearby?.scholarship_programs?.scholarship_name || "Scholarship Application"}
+                </h2>
+                <p className="mt-1 text-xs text-gray-500">{statusNote(currentStatus).note}</p>
+              </div>
+              <Badge className={STATUS_STYLES[currentStatus] || ""}>{currentStatus}</Badge>
+            </div>
+            <div className="mt-4">
+              <div className="mb-1 flex items-center justify-between text-[10px] text-gray-400">
+                <span>Pending</span>
+                <span>Approved</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    currentStatus === "Approved" ? "bg-green-500" : currentStatus === "Not Approved" ? "bg-red-500" : "bg-amber-500"
+                  }`}
+                  style={{ width: `${currentStatus === "Approved" ? 100 : currentStatus === "Not Approved" ? 33 : 50}%` }}
+                />
+              </div>
+              <div className="mt-2 flex items-center gap-4 text-[10px] text-gray-500">
+                {["Pending", "Approved", "Not Approved"].map((step) => {
+                  const isActive = step === currentStatus;
+                  const isDone = currentStatus === "Approved" && step === "Pending";
+                  return (
+                    <span key={step} className="flex items-center gap-1">
+                      <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#7B1113]" : isDone ? "bg-green-500" : "bg-gray-300"}`} />
+                      <span className={isActive ? "font-semibold text-gray-900" : ""}>{step}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="mt-6">
+        <h2 className="text-sm font-bold text-gray-700">My Scholarship Applications</h2>
+        {applications.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState
+              icon="🎓"
+              title="No applications yet"
+              hint="Apply to an open scholarship program to get started."
+            />
+          </div>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {applications.map((app) => {
+              const info =
+                statusNotes[app.application_status || ""] ||
+                { note: "Your application is being reviewed.", hint: "You will be notified once a decision is made." };
+              return (
+                <div
+                  key={app.application_id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900">
+                        {app.scholarship_programs?.scholarship_name || "Scholarship Application"}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-gray-500">
+                        Submitted {formatDateTime(app.application_date)}
+                      </p>
+                    </div>
+                    <Badge className={STATUS_STYLES[app.application_status || ""] || ""}>
+                      {app.application_status || "Pending"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-700">{info.note}</p>
+                  <p className="mt-0.5 text-[11px] text-gray-500">{info.hint}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="mt-6">

@@ -132,6 +132,7 @@ export default function FacultyDashboardPage() {
       <h1 className="text-xl font-bold text-gray-900">
         Faculty Monitoring Dashboard
       </h1>
+      <p className="mt-1 text-xs text-gray-500">Keep an eye on at-risk students and the interventions sent to them.</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Active Alerts" value={activeAlerts.length} tone="red" />

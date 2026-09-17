@@ -134,6 +134,7 @@ export default function ApplicationStatusPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900">Application Status</h1>
+      <p className="mt-1 text-xs text-gray-500">See where each of your applications is in the scholarship process.</p>
 
       {applications.length === 0 ? (
         <div className="mt-4">

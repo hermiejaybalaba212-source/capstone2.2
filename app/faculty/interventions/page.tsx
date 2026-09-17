@@ -204,8 +204,7 @@ function FacultyInterventionsContent() {
           Send Academic Intervention
         </h1>
         <p className="mt-1 text-xs text-gray-500">
-          Process 3.0 &mdash; Counsel and support at-risk scholars through
-          targeted notifications.
+          Counsel and support at-risk scholars through targeted notifications.
         </p>
       </div>
 

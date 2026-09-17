@@ -95,6 +95,7 @@ export default function AlertsPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900">Early Warning Alerts</h1>
+      <p className="mt-1 text-xs text-gray-500">Warnings show up here when your grades fall below the required average.</p>
 
       {alerts.length === 0 ? (
         <div className="mt-4">

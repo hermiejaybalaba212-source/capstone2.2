@@ -31,7 +31,7 @@ export default function ChedLayout({ children }: { children: React.ReactNode }) 
       sb.from("scholarship_applications").select("application_id", { count: "exact", head: true }).eq("application_status", "Pending").then(({ count }) => { setNotifCount(count ?? 0); });
     });
   }, [router]);
-  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/login"); };
+  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/"); };
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar items={MENU_ITEMS} title="St. Peter's College" subtitle="CHED Review Portal" username={username} userRole="CHED Personnel" onLogout={handleLogout} notificationCount={notifCount} notificationHref="/ched/applications" />

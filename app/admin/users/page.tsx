@@ -139,9 +139,11 @@ export default function UserManagementPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#241012]">User Management</h1>
-        <span className="text-xs text-[#8B7376]">Process 3.0</span>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-[#241012]">User Management</h1>
+          <p className="mt-1 text-xs text-[#8B7376]">Manage accounts, roles, and status for every user in the system.</p>
+        </div>
       </div>
 
       {message && (

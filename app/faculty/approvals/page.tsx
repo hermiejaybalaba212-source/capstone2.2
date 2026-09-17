@@ -122,8 +122,7 @@ export default function FacultyApprovalsPage() {
             Approved Scholars List
           </h1>
           <p className="mt-1 text-xs text-gray-500">
-            Process 4.0 &mdash; Final list of approved scholarship recipients
-            with validation status.
+            Final list of scholarship recipients already approved.
           </p>
         </div>
         <button

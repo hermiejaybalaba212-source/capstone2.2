@@ -87,8 +87,6 @@ export default function MLRankingPage() {
   const [chedForms, setChedForms] = useState<ChedForm[]>([]);
   const [academicRecords, setAcademicRecords] = useState<AcademicRecord[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
-  const [clipboardData, setClipboardData] = useState("");
-  const [useClipboard, setUseClipboard] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -132,21 +130,6 @@ export default function MLRankingPage() {
     startFetching();
     return () => { ignore = true; };
   }, [router]);
-
-  async function readClipboard() {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim()) {
-        setClipboardData(text);
-        setUseClipboard(true);
-        setMessage("Clipboard data loaded. Click Run ML Ranking.");
-      } else {
-        setMessage("Clipboard is empty. Paste CSV data into the text box below.");
-      }
-    } catch {
-      setMessage("Clipboard access denied. Click the text box below and press Ctrl+V to paste manually.");
-    }
-  }
 
   async function viewItr(itrPath: string) {
     const sb = getSupabase();
@@ -207,8 +190,7 @@ export default function MLRankingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: useClipboard && clipboardData.trim() ? "clipboard" : "synthetic",
-          csv_text: useClipboard && clipboardData.trim() ? clipboardData : undefined,
+          type: "synthetic",
           n_samples: 400,
           n_trees: 100,
           seed: 2026,
@@ -301,19 +283,6 @@ export default function MLRankingPage() {
     setMessage(`Saved ${rows.length} ranking results. They are now sent to CHED (CHED Dashboard → Ranking Result).`);
   }
 
-  function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      setClipboardData(text);
-      setUseClipboard(true);
-      setMessage(`Loaded ${file.name} (${text.split("\n").length - 1} rows).`);
-    };
-    reader.readAsText(file);
-  }
-
   function exportCsv() {
     downloadCsv("ranking-results-full.csv", ranked.map((r, i) => {
       const form = chedForms.find((c) => c.application_id === r.application_id);
@@ -379,8 +348,10 @@ export default function MLRankingPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#241012]">ML Ranking</h1>
-        <span className="text-xs text-[#8B7376]">Process 6.0</span>
+        <div>
+          <h1 className="text-xl font-bold text-[#241012]">ML Ranking</h1>
+          <p className="mt-1 text-xs text-[#8B7376]">Prioritize pending applicants by financial need automatically.</p>
+        </div>
       </div>
 
       {message && (
@@ -388,43 +359,6 @@ export default function MLRankingPage() {
           {message}
         </div>
       )}
-
-      <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#241012]">Training Data</h2>
-          <div className="flex gap-2">
-            <label className="cursor-pointer rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[10px] font-bold text-[#7B1113] hover:bg-[#7B1113]/5">
-              Upload CSV
-              <input type="file" accept=".csv" onChange={handleCsvFile} className="hidden" />
-            </label>
-            <button
-              onClick={readClipboard}
-              className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[10px] font-bold text-[#7B1113] hover:bg-[#7B1113]/5"
-            >
-              Read Clipboard
-            </button>
-          </div>
-        </div>
-        <textarea
-          value={clipboardData}
-          onChange={(e) => { setClipboardData(e.target.value); setUseClipboard(true); }}
-          onPaste={(e) => { const text = e.clipboardData.getData("text"); if (text) { setClipboardData(text); setUseClipboard(true); setMessage("Pasted. Click Run ML Ranking."); } }}
-          placeholder={"Paste CSV training data here (Ctrl+V)...\nColumns: annual_income_family, shs_gwa, college_gpa, year_level, sex, high_need\n\nExample:\nannual_income_family,shs_gwa,year_level,sex,high_need\n120000,92,3rd,Female,1\n250000,88,2nd,Male,0"}
-          className="w-full h-40 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-3 font-mono text-[11px] text-[#241012] placeholder:text-gray-400 focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113] resize-none"
-        />
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="useClipboard"
-            checked={useClipboard}
-            onChange={(e) => setUseClipboard(e.target.checked)}
-            className="rounded border-gray-300 text-[#7B1113] focus:ring-[#7B1113]"
-          />
-          <label htmlFor="useClipboard" className="text-[11px] text-[#6B5458]">
-            Use clipboard data as training input (combined with synthetic data)
-          </label>
-        </div>
-      </div>
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -470,7 +404,7 @@ export default function MLRankingPage() {
       {ranked.length === 0 ? (
         <EmptyState icon="&#129302;" title="No ranking generated yet" hint="Click Run ML Ranking to prioritize pending applicants." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full text-left text-xs">
             <thead className="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
               <tr>

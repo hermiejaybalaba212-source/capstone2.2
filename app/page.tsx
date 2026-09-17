@@ -115,6 +115,10 @@ export default function LandingPage() {
                   {item}
                 </button>
               ))}
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/5 pt-4">
+                <Link href="/login" className="rounded-lg border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/5">Log in</Link>
+                <Link href="/register" className="rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-black transition hover:bg-white/90">Register</Link>
+              </div>
             </div>
           </div>
         )}
@@ -155,9 +159,7 @@ export default function LandingPage() {
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link href="/register" className="group relative overflow-hidden rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-black transition hover:shadow-lg hover:shadow-white/10">
-              <span className="relative z-10">Start Your Application</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-rose-400 to-pink-400 opacity-0 transition group-hover:opacity-100" />
-              <span className="relative z-10 group-hover:text-white">Start Your Application</span>
+              Start Your Application
             </Link>
             <button onClick={() => scrollTo("how-it-works")} className="rounded-xl border border-white/10 px-8 py-3.5 text-sm font-medium text-white/70 transition hover:border-white/20 hover:text-white">
               See How It Works &darr;

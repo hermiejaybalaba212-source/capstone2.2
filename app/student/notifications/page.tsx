@@ -114,7 +114,10 @@ export default function NotificationsPage() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
+          <p className="mt-1 text-xs text-gray-500">Messages and status updates from the scholarship office.</p>
+        </div>
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}

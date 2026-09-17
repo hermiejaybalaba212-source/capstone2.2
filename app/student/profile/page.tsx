@@ -336,6 +336,7 @@ export default function StudentProfilePage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900">Profile & Documents</h1>
+      <p className="mt-1 text-xs text-gray-500">Your registered details, academic records, and uploaded documents.</p>
 
       {profileMsg && (
         <div

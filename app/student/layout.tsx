@@ -40,7 +40,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       });
     });
   }, [router]);
-  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/login"); };
+  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/"); };
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar items={MENU_ITEMS} title="St. Peter's College" subtitle="Student Portal" username={username} userRole="Student" onLogout={handleLogout} notificationCount={notifCount} notificationHref="/student/notifications" />

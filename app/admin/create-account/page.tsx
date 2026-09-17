@@ -74,8 +74,10 @@ export default function CreateFacultyAccountPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#241012]">Create Faculty Account</h1>
-        <span className="text-xs text-[#8B7376]">Process 2.0</span>
+        <div>
+          <h1 className="text-xl font-bold text-[#241012]">Create Faculty Account</h1>
+          <p className="mt-1 text-xs text-[#8B7376]">Set up a faculty member so they can monitor and support scholars.</p>
+        </div>
       </div>
 
       <div className="max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-sm">

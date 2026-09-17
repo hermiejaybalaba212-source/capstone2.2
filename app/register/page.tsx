@@ -24,25 +24,27 @@ interface Form {
   confirmPassword: string;
 }
 
-function SectionTitle({ number, title }: { number: string; title: string }) {
+function SectionTitle({ number, title, description }: { number: string; title: string; description?: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-[#7B1113] text-xs font-bold text-white">{number}</div>
-      <h2 className="text-base font-bold text-[#241012]">{title}</h2>
-      <div className="h-px flex-1 bg-[#7B1113]/10" />
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#7B1113] text-xs font-bold text-white">{number}</div>
+      <div className="min-w-0">
+        <h2 className="text-base font-bold text-[#241012]">{title}</h2>
+        {description && <p className="mt-0.5 text-xs leading-relaxed text-[#6B5458]">{description}</p>}
+      </div>
     </div>
   );
 }
 
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return <label className="mb-1 block text-xs font-bold text-[#241012]">{children}{required && <span className="ml-0.5 text-[#7B1113]">*</span>}</label>;
+  return <label className="mb-1.5 block text-xs font-bold text-[#241012]">{children}{required && <span className="ml-0.5 text-[#7B1113]">*</span>}</label>;
 }
 
 function Input({ label, name, value, onChange, placeholder, type = "text", required = false, disabled = false, max }: { label: string; name: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string; type?: string; required?: boolean; disabled?: boolean; max?: string }) {
   return (
     <div className="min-w-0">
-      <Label required={required}>{label}</Label>
-      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled} max={max} className="box-border min-w-0 w-full rounded-lg border border-[#7B1113]/25 bg-white px-3 py-2.5 text-sm text-[#241012] outline-none placeholder:text-xs placeholder:text-[#8B7376] focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100" />
+      <Label required={required}>{label}{!required && <span className="ml-1 rounded-full bg-[#F3EEEB] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#8B7376]">Optional</span>}</Label>
+      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled} max={max} className="box-border min-w-0 w-full rounded-xl border border-[#241012]/10 bg-white px-3.5 py-2.5 text-sm text-[#241012] outline-none transition placeholder:text-xs placeholder:text-[#8B7376] focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100" />
     </div>
   );
 }
@@ -51,7 +53,7 @@ function SelectField({ label, name, value, onChange, placeholder, options, requi
   return (
     <div className="min-w-0">
       <Label required={required}>{label}</Label>
-      <select name={name} value={value} onChange={onChange} required={required} disabled={disabled} className="w-full rounded-lg border border-[#7B1113]/25 bg-white px-3 py-2.5 text-sm text-[#241012] outline-none focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100">
+      <select name={name} value={value} onChange={onChange} required={required} disabled={disabled} className="w-full rounded-xl border border-[#241012]/10 bg-white px-3.5 py-2.5 text-sm text-[#241012] outline-none transition focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100">
         <option value="">{placeholder}</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -64,7 +66,7 @@ function PasswordInput({ label, name, value, onChange, placeholder, show, setSho
     <div className="min-w-0">
       <Label required>{label}</Label>
       <div className="relative">
-        <input type={show ? "text" : "password"} name={name} value={value} onChange={onChange} placeholder={placeholder} required disabled={disabled} className="box-border min-w-0 w-full rounded-lg border border-[#7B1113]/25 bg-white px-3 py-2.5 pr-14 text-sm text-[#241012] outline-none placeholder:text-xs placeholder:text-[#8B7376] focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100" />
+        <input type={show ? "text" : "password"} name={name} value={value} onChange={onChange} placeholder={placeholder} required disabled={disabled} className="box-border min-w-0 w-full rounded-xl border border-[#241012]/10 bg-white px-3.5 py-2.5 pr-14 text-sm text-[#241012] outline-none transition placeholder:text-xs placeholder:text-[#8B7376] focus:border-[#7B1113] focus:ring-4 focus:ring-[#7B1113]/10 disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#5F4B4E] disabled:opacity-100" />
         <button type="button" onClick={() => setShow(!show)} disabled={disabled} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#7B1113] hover:underline disabled:opacity-50">{show ? "Hide" : "Show"}</button>
       </div>
     </div>
@@ -73,7 +75,7 @@ function PasswordInput({ label, name, value, onChange, placeholder, show, setSho
 
 function ApplicantChip({ type, description, selected, disabled, onClick }: { type: string; description: string; selected: boolean; disabled: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className={`flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition ${selected ? "border-[#7B1113] bg-[#FAF7F5] shadow-sm" : "border-[#7B1113]/10 bg-white hover:border-[#7B1113]/30"} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+    <button type="button" onClick={onClick} disabled={disabled} className={`flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition ${selected ? "border-[#7B1113] bg-[#FAF7F5] shadow-sm" : "border-[#241012]/10 bg-white hover:border-[#7B1113]/30"} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
       <div>
         <p className="text-sm font-bold text-[#241012]">{type}</p>
         <p className="mt-0.5 text-xs text-[#6B5458]">{description}</p>
@@ -108,6 +110,13 @@ export default function RegisterPage() {
   const validateForm = () => {
     if (!form.applicantType) { setError("Please select your applicant type."); return false; }
     if (form.applicantType === "Freshman" && form.yearLevel !== "1st Year") { setError("Freshman applicants are automatically assigned to 1st Year."); return false; }
+    if (!form.studentNumber.trim()) { setError("Please enter your student number."); return false; }
+    if (!form.givenName.trim()) { setError("Please enter your given name."); return false; }
+    if (!form.lastName.trim()) { setError("Please enter your last name."); return false; }
+    if (!form.sex) { setError("Please select your sex."); return false; }
+    if (!form.birthdate) { setError("Please enter your birthdate."); return false; }
+    if (!form.programName) { setError("Please select your program."); return false; }
+    if (!form.yearLevel) { setError("Please select your year level."); return false; }
     if (!form.username.trim()) { setError("Please enter a username."); return false; }
     if (!form.email.trim()) { setError("Please enter your email address."); return false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setError("Please enter a valid email address."); return false; }
@@ -269,97 +278,121 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen font-sans text-[#241012]">
-      <aside className="relative hidden w-[38%] flex-col justify-between overflow-hidden bg-gradient-to-b from-[#7B1113] via-[#5A0C0E] to-[#3E0009] p-10 text-white lg:flex">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/5" />
-        <div className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-black/20" />
+    <div className="flex min-h-screen bg-[#FAF7F5] font-sans text-[#241012]">
+      <aside className="relative hidden w-[40%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#7B1113] via-[#5A0C0E] to-[#3E0009] p-12 text-white xl:flex 2xl:p-16">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/[0.06]" />
+        <div className="pointer-events-none absolute -bottom-36 -left-20 h-96 w-96 rounded-full bg-black/20" />
         <Link href="/" className="relative flex items-center gap-3">
-          <div className="leading-tight">
-            <p className="text-lg font-bold">St. Peter&rsquo;s College</p>
-            <p className="text-xs text-white/70">Iligan City</p>
-          </div>
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-sm font-black">SPC</span>
+          <span className="leading-tight">
+            <span className="block text-base font-bold">St. Peter&rsquo;s College</span>
+            <span className="block text-xs text-white/70">Iligan City</span>
+          </span>
         </Link>
         <div className="relative">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/70">Student Registration</p>
-          <h1 className="mt-4 text-3xl font-bold leading-snug">Start your scholarship journey today.</h1>
-          <ul className="mt-7 space-y-3 text-sm text-white/85">
-            {["Verified against the Registrar Information System", "Upload COR, Valid ID & academic records securely", "Apply with the official CHED form and ITR proof", "Track application status and notifications live"].map((f) => (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/60">Student Registration</p>
+          <h1 className="mt-5 text-4xl font-bold leading-[1.15] 2xl:text-[2.6rem]">
+            Create your student account and apply in minutes.
+          </h1>
+          <ul className="mt-9 space-y-4 text-sm text-white/85">
+            {[
+              "Pick your applicant type, then fill in one short form",
+              "Your student number is checked against the Registrar",
+              "Log in to upload documents and apply for scholarships",
+            ].map((f) => (
               <li key={f} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-white/15 text-[10px] font-bold">&#10003;</span>
-                {f}
+                <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-white/15 text-[11px] font-bold">&#10003;</span>
+                <span className="leading-relaxed">{f}</span>
               </li>
             ))}
           </ul>
         </div>
-        <p className="relative text-xs leading-relaxed text-white/60">&copy; {new Date().getFullYear()} St. Peter&rsquo;s College &middot; Scholarship &amp; Financial Aid Office</p>
+        <p className="relative text-xs leading-relaxed text-white/55">
+          &copy; {new Date().getFullYear()} St. Peter&rsquo;s College &middot; Scholarship &amp; Financial Aid Office
+        </p>
       </aside>
 
-      <main className="flex flex-1 items-center justify-center bg-white px-4 py-8 sm:px-8">
-        <form onSubmit={handleRegister} className="w-full max-w-3xl">
+      <main className="flex flex-1 items-start justify-center px-4 py-8 sm:px-8 lg:items-center lg:py-10">
+        <form onSubmit={handleRegister} className="w-full max-w-2xl">
           <div className="mb-5 flex items-center justify-between lg:hidden">
             <Link href="/" className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#7B1113] to-[#540111] text-xs font-black text-white">SPC</span>
               <div className="leading-tight">
-                <p className="text-sm font-bold">St. Peter&rsquo;s College</p>
+                <p className="text-sm font-bold text-[#241012]">St. Peter&rsquo;s College</p>
                 <p className="text-[10px] text-[#6B5458]">Scholarship System</p>
               </div>
             </Link>
-            <Link href="/login" className="rounded-lg border border-[#7B1113]/30 px-3 py-2 text-xs font-semibold text-[#7B1113] hover:bg-[#7B1113]/5">Log in</Link>
+            <Link href="/login" className="rounded-lg border border-[#7B1113]/25 px-4 py-2 text-xs font-semibold text-[#7B1113] transition hover:bg-[#7B1113]/5">Log in</Link>
           </div>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#7B1113]">Student Registration</p>
-              <h1 className="mt-1.5 text-2xl font-bold text-[#241012] sm:text-3xl">Create Your Scholarship Account</h1>
-              <p className="mt-1.5 text-sm text-[#6B5458]">Fill out all required fields <span className="font-bold text-[#7B1113]">*</span> to register.</p>
-            </div>
-            <Link href="/login" className="hidden shrink-0 text-sm font-semibold text-[#7B1113] hover:underline lg:block">Already have an account? Log in</Link>
-          </div>
-          {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><div className="flex gap-3"><span className="font-bold">!</span><p>{error}</p></div></div>}
-          {success && <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"><div className="flex gap-3"><span className="font-bold">&#10003;</span><p>{success}</p></div></div>}
 
-          <section className="mt-6">
-            <SectionTitle number="01" title="Applicant Type" />
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <ApplicantChip type="Freshman" description="Using Senior High School records" selected={form.applicantType === "Freshman"} disabled={registering} onClick={() => setForm((prev) => ({ ...prev, applicantType: "Freshman", yearLevel: "1st Year" }))} />
-              <ApplicantChip type="Alumni" description="Using college academic records" selected={form.applicantType === "Alumni"} disabled={registering} onClick={() => setForm((prev) => ({ ...prev, applicantType: "Alumni", yearLevel: prev.yearLevel === "1st Year" ? "" : prev.yearLevel }))} />
+          <div className="rounded-2xl border border-[#241012]/[0.06] bg-white p-6 shadow-[0_18px_50px_-20px_rgba(36,16,18,0.18)] sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#7B1113]">Student Registration</p>
+                <h1 className="mt-1.5 text-2xl font-bold text-[#241012]">Create your account</h1>
+                <p className="mt-1 text-sm leading-relaxed text-[#6B5458]">
+                  Fill in the form below — fields marked <span className="font-bold text-[#7B1113]">*</span> are required.
+                </p>
+              </div>
+              <Link href="/login" className="hidden shrink-0 rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs font-semibold text-[#7B1113] transition hover:bg-[#7B1113]/5 sm:block">Already have an account?</Link>
             </div>
-          </section>
 
-          <section className="mt-6">
-            <SectionTitle number="02" title="Personal Details" />
-            <div className="mt-3 grid gap-x-4 gap-y-3.5 md:grid-cols-3">
-              <Input label="Student Number" name="studentNumber" value={form.studentNumber} onChange={handleChange} placeholder="2023-00010" required disabled={registering} />
-              <SelectField label="Sex" name="sex" value={form.sex} onChange={handleChange} placeholder="Select sex" options={["Male", "Female"]} required disabled={registering} />
-              <Input label="Birthdate" name="birthdate" type="date" value={form.birthdate} onChange={handleChange} placeholder="" max={new Date().toISOString().split("T")[0]} required disabled={registering} />
-              <Input label="Given Name" name="givenName" value={form.givenName} onChange={handleChange} placeholder="Juan" required disabled={registering} />
-              <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} placeholder="Santos (optional)" disabled={registering} />
-              <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Dela Cruz" required disabled={registering} />
-              <Input label="Extension Name" name="extName" value={form.extName} onChange={handleChange} placeholder="Jr., Sr., III" disabled={registering} />
-              <SelectField label="Program Name" name="programName" value={form.programName} onChange={handleChange} placeholder="Select program" options={PROGRAMS} required disabled={registering} />
-              <SelectField label="Year Level" name="yearLevel" value={form.yearLevel} onChange={handleChange} placeholder="Select year level" options={YEAR_LEVELS} required disabled={registering || form.applicantType === "Freshman"} />
-            </div>
-          </section>
+            {error && <div className="mt-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span className="font-bold">!</span><p>{error}</p></div>}
+            {success && <div className="mt-5 flex gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"><span className="font-bold">&#10003;</span><p>{success}</p></div>}
 
-          <section className="mt-6">
-            <SectionTitle number="03" title="Account Credentials" />
-            <div className="mt-3 grid gap-x-4 gap-y-3.5 md:grid-cols-3">
-              <Input label="Username" name="username" value={form.username} onChange={handleChange} placeholder="juandelacruz" required disabled={registering} />
-              <Input label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} placeholder="juan.delacruz@gmail.com" required disabled={registering} />
-              <div className="hidden md:block" />
-              <PasswordInput label="Password" name="password" value={form.password} onChange={handleChange} placeholder="At least 8 characters" show={showPassword} setShow={setShowPassword} disabled={registering} />
-              <PasswordInput label="Confirm Password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat password" show={showConfirmPassword} setShow={setShowConfirmPassword} disabled={registering} />
-            </div>
-          </section>
+            <section className="mt-7">
+              <SectionTitle number="01" title="Who are you?" description="This decides which records are used to rank your application." />
+              <div className="mt-3.5 grid gap-3 sm:grid-cols-2">
+                <ApplicantChip type="Freshman" description="Using Senior High School records" selected={form.applicantType === "Freshman"} disabled={registering} onClick={() => setForm((prev) => ({ ...prev, applicantType: "Freshman", yearLevel: "1st Year" }))} />
+                <ApplicantChip type="Alumni" description="Using college academic records" selected={form.applicantType === "Alumni"} disabled={registering} onClick={() => setForm((prev) => ({ ...prev, applicantType: "Alumni", yearLevel: prev.yearLevel === "1st Year" ? "" : prev.yearLevel }))} />
+              </div>
+              {form.applicantType === "Freshman" && (
+                <p className="mt-2 text-[11px] text-[#7B1113]">Tip: Freshman applicants are automatically set to 1st Year.</p>
+              )}
+            </section>
 
-          <div className="mt-7 border-t border-[#7B1113]/10 pt-5">
-            <label className="flex cursor-pointer items-start gap-3">
-              <input type="checkbox" required disabled={registering} className="mt-0.5 h-4 w-4 accent-[#7B1113]" />
-              <span className="text-xs leading-relaxed text-[#6B5458]">I confirm that the information I provided is accurate and corresponds to my registered student record.</span>
-            </label>
-            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-relaxed text-[#8B7376]">After registering, you can log in to continue with documents, academic records and scholarship application.</p>
-              <button type="submit" disabled={registering} className="shrink-0 rounded-xl bg-gradient-to-r from-[#7B1113] to-[#540111] px-8 py-3 text-sm font-bold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
-                {registering ? <span className="flex items-center justify-center gap-2"><Spinner />Creating Account...</span> : "Create Student Account"}
-              </button>
+            <div className="my-7 h-px bg-[#241012]/[0.06]" />
+
+            <section>
+              <SectionTitle number="02" title="Your details" description="Use the exact spelling in your student record." />
+              <div className="mt-3.5 grid gap-x-4 gap-y-3.5 md:grid-cols-3">
+                <Input label="Student Number" name="studentNumber" value={form.studentNumber} onChange={handleChange} placeholder="2023-00010" required disabled={registering} />
+                <SelectField label="Sex" name="sex" value={form.sex} onChange={handleChange} placeholder="Select sex" options={["Male", "Female"]} required disabled={registering} />
+                <Input label="Birthdate" name="birthdate" type="date" value={form.birthdate} onChange={handleChange} placeholder="" max={new Date().toISOString().split("T")[0]} required disabled={registering} />
+                <Input label="Given Name" name="givenName" value={form.givenName} onChange={handleChange} placeholder="Juan" required disabled={registering} />
+                <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} placeholder="Santos (optional)" disabled={registering} />
+                <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Dela Cruz" required disabled={registering} />
+                <Input label="Extension Name" name="extName" value={form.extName} onChange={handleChange} placeholder="Jr., Sr., III" disabled={registering} />
+                <SelectField label="Program" name="programName" value={form.programName} onChange={handleChange} placeholder="Select program" options={PROGRAMS} required disabled={registering} />
+                <SelectField label="Year Level" name="yearLevel" value={form.yearLevel} onChange={handleChange} placeholder="Select year level" options={YEAR_LEVELS} required disabled={registering || form.applicantType === "Freshman"} />
+              </div>
+            </section>
+
+            <div className="my-7 h-px bg-[#241012]/[0.06]" />
+
+            <section>
+              <SectionTitle number="03" title="Login details" description="You will use these to sign in to your account." />
+              <div className="mt-3.5 grid gap-x-4 gap-y-3.5 md:grid-cols-3">
+                <Input label="Username" name="username" value={form.username} onChange={handleChange} placeholder="juandelacruz" required disabled={registering} />
+                <Input label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} placeholder="juan.delacruz@gmail.com" required disabled={registering} />
+                <div className="hidden md:block" />
+                <PasswordInput label="Password" name="password" value={form.password} onChange={handleChange} placeholder="At least 8 characters" show={showPassword} setShow={setShowPassword} disabled={registering} />
+                <PasswordInput label="Confirm Password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat password" show={showConfirmPassword} setShow={setShowConfirmPassword} disabled={registering} />
+              </div>
+              <p className="mt-2 text-[11px] text-[#8B7376]">Tip: use at least 8 characters and keep your password private.</p>
+            </section>
+
+            <div className="mt-8 border-t border-[#241012]/[0.06] pt-6">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input type="checkbox" required disabled={registering} className="mt-0.5 h-4 w-4 accent-[#7B1113]" />
+                <span className="text-xs leading-relaxed text-[#6B5458]">I confirm that the information I provided is accurate and matches my registered student record.</span>
+              </label>
+              <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-relaxed text-[#8B7376]">After registering, you can log in to continue with your documents, academic records, and scholarship application.</p>
+                <button type="submit" disabled={registering} className="shrink-0 rounded-xl bg-gradient-to-r from-[#7B1113] to-[#540111] px-8 py-3 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
+                  {registering ? <span className="flex items-center justify-center gap-2"><Spinner />Creating Account...</span> : "Create Student Account"}
+                </button>
+              </div>
             </div>
           </div>
         </form>

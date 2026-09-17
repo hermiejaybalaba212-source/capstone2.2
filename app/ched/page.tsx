@@ -88,6 +88,7 @@ export default function ChedDashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-gray-900">CHED Dashboard</h1>
+      <p className="mt-1 text-xs text-gray-500">Review applications, the ranking result, and approved beneficiaries.</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Total Applications" value={applications.length} tone="blue" />

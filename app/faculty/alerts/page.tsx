@@ -188,8 +188,7 @@ export default function FacultyAlertsPage() {
           Early Warning Alerts
         </h1>
         <p className="mt-1 text-xs text-gray-500">
-          Process 2.0 &mdash; Monitor students whose grades have fallen below
-          the 93% maintenance threshold.
+          Monitor students whose grades have fallen below the 93% maintenance threshold.
         </p>
       </div>
 

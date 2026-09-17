@@ -106,10 +106,12 @@ export default function ManageProgramsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#241012]">Manage Scholarship Programs</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-[#241012]">Manage Scholarship Programs</h1>
+          <p className="mt-1 text-xs text-[#8B7376]">Create, edit, or close the scholarships students can apply to.</p>
+        </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#8B7376]">Process 4.0</span>
           <button onClick={openNew} className="rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#540111]">
             + Create New
           </button>

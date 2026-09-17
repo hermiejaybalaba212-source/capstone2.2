@@ -69,6 +69,7 @@ export default function BrowseProgramsPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900">Browse Available Programs</h1>
+      <p className="mt-1 text-xs text-gray-500">Check the open scholarships below and apply to the one that fits you.</p>
 
       {hasApprovedApplication && (
         <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 shadow-sm">
