@@ -94,8 +94,8 @@ export default function AlertsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Early Warning Alerts</h1>
-      <p className="mt-1 text-xs text-gray-500">Warnings show up here when your grades fall below the required average.</p>
+      <h1 className="text-xl font-bold text-[#241012]">Early Warning Alerts</h1>
+      <p className="mt-1 text-xs text-[#6B5458]">Warnings show up here when your grades fall below the required average.</p>
 
       {alerts.length === 0 ? (
         <div className="mt-4">
@@ -109,7 +109,7 @@ export default function AlertsPage() {
         <div className="mt-4 space-y-4">
           {activeAlerts.length > 0 && (
             <section>
-              <h2 className="text-sm font-bold text-gray-700">Active Alerts</h2>
+              <h2 className="text-sm font-bold text-[#241012]">Active Alerts</h2>
               <div className="mt-3 space-y-3">
                 {activeAlerts.map((alert) => (
                   <div
@@ -125,12 +125,12 @@ export default function AlertsPage() {
                           Risk: {alert.risk_level}
                         </span>
                       )}
-                      <span className="ml-auto text-[11px] text-gray-500">
+                      <span className="ml-auto text-[11px] text-[#6B5458]">
                         {formatDateTime(alert.warning_date)}
                       </span>
                     </div>
-                    <p className="mt-3 text-xs text-gray-800">{alert.warning_message}</p>
-                    <div className="mt-3 flex gap-4 text-xs text-gray-600">
+                    <p className="mt-3 text-xs text-[#241012]">{alert.warning_message}</p>
+                    <div className="mt-3 flex gap-4 text-xs text-[#6B5458]">
                       {alert.gpa != null && (
                         <span>
                           GPA: <strong>{alert.gpa}</strong>
@@ -143,7 +143,7 @@ export default function AlertsPage() {
                       )}
                     </div>
                     {alert.student_accounts && (
-                      <p className="mt-2 text-[11px] text-gray-500">
+                      <p className="mt-2 text-[11px] text-[#6B5458]">
                         Student: {alert.student_accounts.given_name}{" "}
                         {alert.student_accounts.last_name}
                         {alert.student_accounts.student_number
@@ -159,28 +159,28 @@ export default function AlertsPage() {
 
           {resolvedAlerts.length > 0 && (
             <section>
-              <h2 className="text-sm font-bold text-gray-700">Resolved Alerts</h2>
+              <h2 className="text-sm font-bold text-[#241012]">Resolved Alerts</h2>
               <div className="mt-3 space-y-3">
                 {resolvedAlerts.map((alert) => (
                   <div
                     key={alert.warning_id}
-                    className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                    className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm"
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className={STATUS_STYLES["Resolved"] || ""}>
                         {alert.status}
                       </Badge>
                       {alert.risk_level && (
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-[#6B5458]">
                           Risk: {alert.risk_level}
                         </span>
                       )}
-                      <span className="ml-auto text-[11px] text-gray-400">
+                      <span className="ml-auto text-[11px] text-[#8B7376]">
                         {formatDateTime(alert.warning_date)}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">{alert.warning_message}</p>
-                    <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-[#6B5458]">{alert.warning_message}</p>
+                    <div className="mt-2 flex gap-4 text-xs text-[#6B5458]">
                       {alert.gpa != null && (
                         <span>
                           GPA: <strong>{alert.gpa}</strong>
@@ -193,7 +193,7 @@ export default function AlertsPage() {
                       )}
                     </div>
                     {alert.student_accounts && (
-                      <p className="mt-2 text-[11px] text-gray-400">
+                      <p className="mt-2 text-[11px] text-[#8B7376]">
                         Student: {alert.student_accounts.given_name}{" "}
                         {alert.student_accounts.last_name}
                         {alert.student_accounts.student_number

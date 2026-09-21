@@ -16,18 +16,10 @@ interface RankedRow {
   priority_score: number;
   prediction: string;
   income: number | null;
-  gwa: number | null;
   year_level: string | null;
   sex: string | null;
   hasItr: boolean;
   itrPath: string | null;
-}
-
-interface AcademicRecord {
-  student_id: number;
-  shs_gwa?: number;
-  college_gpa?: number;
-  applicant_type?: string;
 }
 
 interface ChedForm {
@@ -80,12 +72,10 @@ export default function MLRankingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [ranked, setRanked] = useState<RankedRow[]>([]);
   const [rfInfo, setRfInfo] = useState<{ nTrees: number; accuracy: number; precision: number; recall: number; f1: number; samples: number } | null>(null);
   const [message, setMessage] = useState("");
   const [chedForms, setChedForms] = useState<ChedForm[]>([]);
-  const [academicRecords, setAcademicRecords] = useState<AcademicRecord[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -108,21 +98,18 @@ export default function MLRankingPage() {
       }
       if (!session) { router.push("/login"); return; }
 
-      const [chedQ, pendingQ, acadQ] = await Promise.all([
+      const [chedQ, pendingQ] = await Promise.all([
         sb.from("ched_form_input")
           .select("ched_form_id, application_id, annual_income_family, income_tax_return, shs_gwa, college_gpa, year_level, sex, high_need")
           .order("ched_form_id", { ascending: false }),
         sb.from("scholarship_applications").select("application_id").eq("application_status", "Pending"),
-        sb.from("support_academic_records").select("student_id, shs_gwa, college_gpa, applicant_type"),
       ]);
 
       if (!chedQ.error) setChedForms((chedQ.data || []) as ChedForm[]);
       setPendingCount(pendingQ.data?.length ?? 0);
-      if (!acadQ.error) setAcademicRecords(acadQ.data || []);
       const queryErrors = [
         chedQ.error && `CHED forms: ${chedQ.error.message}`,
         pendingQ.error && `pending applications: ${pendingQ.error.message}`,
-        acadQ.error && `academic records: ${acadQ.error.message}`,
       ].filter(Boolean);
       if (queryErrors.length) setMessage(`Some ranking data could not be loaded: ${queryErrors.join("; ")}`);
       if (!ignore) setLoading(false);
@@ -166,16 +153,12 @@ export default function MLRankingPage() {
         const sp = Array.isArray(app.scholarship_programs) ? app.scholarship_programs[0] : app.scholarship_programs;
         const form = formMap[app.application_id];
         const applicationData = (app.application_data || {}) as { annual_income_family?: number; itr_file?: string };
-        const studentId = app.student_id;
-        const acadRec = academicRecords.find((r) => r.student_id === studentId);
-        const gwa = acadRec?.shs_gwa ?? acadRec?.college_gpa ?? null;
         const income = form?.annual_income_family ?? applicationData.annual_income_family ?? null;
         const itrPath = form?.income_tax_return ?? applicationData.itr_file ?? null;
 
         return {
           application_id: app.application_id,
           annual_income_family: income,
-          shs_gwa: gwa,
           year_level: form?.year_level ?? sa?.year_level ?? null,
           sex: form?.sex ?? sa?.sex ?? null,
           student_name: sa ? `${sa.last_name ?? ""}, ${sa.given_name ?? ""}` : `App #${app.application_id}`,
@@ -226,7 +209,6 @@ export default function MLRankingPage() {
           priority_score: pred?.priority_score ?? 0,
           prediction: pred?.prediction ?? "Unknown",
           income: app.annual_income_family,
-          gwa: app.shs_gwa,
           year_level: app.year_level,
           sex: app.sex,
           hasItr: app.hasItr,
@@ -245,83 +227,28 @@ export default function MLRankingPage() {
         f1: trainResult.f1_score,
         samples: trainResult.total_samples ?? trainResult.n_samples ?? 0,
       });
-      setMessage(`Ranking complete — ${results.length} applicants prioritized. Model accuracy: ${(trainResult.accuracy * 100).toFixed(1)}%`);
+
+      const rows = results.map((r, i) => ({
+        application_id: r.application_id,
+        priority_score: r.priority_score,
+        ranking_position: i + 1,
+        prediction_result: r.prediction,
+        generated_date: new Date().toISOString(),
+      }));
+      for (const row of rows) {
+        await sb.from("ranking_result").delete().eq("application_id", row.application_id);
+      }
+      const { error: saveErr } = await sb.from("ranking_result").insert(rows);
+      setMessage(
+        saveErr
+          ? `Ranking complete — ${results.length} applicants prioritized, but auto-save to CHED failed: ${saveErr.message}`
+          : `Ranking complete — ${results.length} applicants prioritized and sent to CHED automatically. Model accuracy: ${(trainResult.accuracy * 100).toFixed(1)}%`
+      );
     } catch (err: unknown) {
       setMessage(err instanceof Error ? err.message : "Failed to run ranking.");
     }
 
     setRunning(false);
-  }
-
-  async function saveResults() {
-    if (!ranked.length) return;
-    setSaving(true);
-    setMessage("");
-    const sb = getSupabase();
-
-    const rows = ranked.map((r, i) => ({
-      application_id: r.application_id,
-      priority_score: r.priority_score,
-      ranking_position: i + 1,
-      prediction_result: r.prediction,
-      generated_date: new Date().toISOString(),
-    }));
-
-    for (const row of rows) {
-      const { error: delErr } = await sb.from("ranking_result").delete().eq("application_id", row.application_id);
-      if (delErr) {
-        setSaving(false);
-        setMessage(`Failed to clear old ranking: ${delErr.message}`);
-        return;
-      }
-    }
-
-    const { error } = await sb.from("ranking_result").insert(rows);
-    setSaving(false);
-
-    if (error) { setMessage(error.message); return; }
-    setMessage(`Saved ${rows.length} ranking results. They are now sent to CHED (CHED Dashboard → Ranking Result).`);
-  }
-
-  function exportCsv() {
-    downloadCsv("ranking-results-full.csv", ranked.map((r, i) => {
-      const form = chedForms.find((c) => c.application_id === r.application_id);
-      const app = form?.scholarship_applications;
-      const sa = app?.student_accounts;
-      const usr = sa?.users;
-      return {
-        position: i + 1,
-        application_id: r.application_id,
-        user_id: usr?.username ?? "",
-        auth_user_id: usr?.auth_user_id ?? "",
-        email: usr?.email ?? "",
-        student_id: sa?.student_id ?? "",
-        student_number: r.student_number,
-        last_name: form?.last_name ?? sa?.last_name ?? "",
-        given_name: form?.given_name ?? sa?.given_name ?? "",
-        middle_name: form?.middle_name ?? sa?.middle_name ?? "",
-        ext_name: form?.ext_name ?? sa?.ext_name ?? "",
-        sex: form?.sex ?? sa?.sex ?? "",
-        birthdate: form?.birthdate ?? sa?.birthdate ?? "",
-        program: form?.complete_program_name ?? sa?.program_name ?? "",
-        year_level: form?.year_level ?? sa?.year_level ?? "",
-        father_name: form?.father_name ?? "",
-        mother_name: form?.mother_name ?? "",
-        street_barangay: form?.street_barangay ?? "",
-        zipcode: form?.zipcode ?? "",
-        disability: form?.disability ?? "",
-        indigenous_people_group: form?.indigenous_people_group ?? "",
-        contact_number: form?.contact_number ?? "",
-        form_email_address: form?.email_address ?? "",
-        annual_income_family: form?.annual_income_family != null ? Number(form.annual_income_family) : "",
-        itr_file_path: form?.income_tax_return ?? "",
-        shs_gwa: form?.shs_gwa != null ? Number(form.shs_gwa) : "",
-        college_gpa: form?.college_gpa != null ? Number(form.college_gpa) : "",
-        scholarship: r.scholarship,
-        priority_score: r.priority_score,
-        prediction: r.prediction,
-      };
-    }));
   }
 
   function exportChedFormsCsv() {
@@ -343,6 +270,48 @@ export default function MLRankingPage() {
     setMessage(`Exported ${chedForms.length} CHED form submissions.`);
   }
 
+  /** Preprocess + transform ranked applicants into an ML-ready CSV with no missing values. */
+  function exportPreprocessedCsv() {
+    if (!ranked.length) return;
+    const incomes = ranked.map((r) => r.income).filter((v): v is number => v != null);
+    const fallbackIncome = incomes.length
+      ? Math.round(incomes.reduce((a, b) => a + b, 0) / incomes.length)
+      : 150000;
+    const gwas = chedForms.map((c) => Number(c.shs_gwa)).filter((v) => !isNaN(v));
+    const gpas = chedForms.map((c) => Number(c.college_gpa)).filter((v) => !isNaN(v));
+    const fallbackGwa = gwas.length ? gwas.reduce((a, b) => a + b, 0) / gwas.length : 0;
+    const fallbackGpa = gpas.length ? gpas.reduce((a, b) => a + b, 0) / gpas.length : 0;
+    const yearCode = (y: string | null | undefined) => {
+      const m = /(\d+)/.exec(y || "");
+      if (!m) return 0;
+      const n = parseInt(m[1], 10);
+      return n >= 1 && n <= 5 ? n : 0;
+    };
+    downloadCsv("ml-training-dataset-preprocessed.csv", ranked.map((r, i) => {
+      const form = chedForms.find((c) => c.application_id === r.application_id);
+      const income = r.income ?? fallbackIncome;
+      const gwa = form && form.shs_gwa != null ? Number(form.shs_gwa) : NaN;
+      const gpa = form && form.college_gpa != null ? Number(form.college_gpa) : NaN;
+      return {
+        position: i + 1,
+        application_id: r.application_id,
+        student_name: r.student_name || "Unknown",
+        student_number: r.student_number || "N/A",
+        scholarship: r.scholarship || "N/A",
+        annual_income_family: income,
+        shs_gwa_filled: isNaN(gwa) ? Math.round(fallbackGwa * 100) / 100 : gwa,
+        college_gpa_filled: isNaN(gpa) ? Math.round(fallbackGpa * 100) / 100 : gpa,
+        sex_binary: r.sex === "Male" ? 0 : r.sex === "Female" ? 1 : 0,
+        year_level_numeric: yearCode(r.year_level),
+        income_tax_return_binary: r.hasItr ? 1 : 0,
+        high_need_binary: income < 150000 ? 1 : 0,
+        priority_score: r.priority_score,
+        prediction: r.prediction,
+      };
+    }));
+    setMessage(`Exported preprocessed ML training CSV (${ranked.length} rows) — missing values filled, categorical fields encoded as binary/numeric.`);
+  }
+
   if (loading) return <Spinner label="Loading ranking data..." color="maroon" />;
 
   return (
@@ -350,7 +319,7 @@ export default function MLRankingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#241012]">ML Ranking</h1>
-          <p className="mt-1 text-xs text-[#8B7376]">Prioritize pending applicants by financial need automatically.</p>
+          <p className="mt-1 text-xs text-[#8B7376]">Prioritize pending applicants based on their annual family income automatically.</p>
         </div>
       </div>
 
@@ -369,18 +338,12 @@ export default function MLRankingPage() {
           {running ? "Running..." : `Run ML Ranking (${pendingCount} pending)`}
         </button>
         <button
-          onClick={saveResults}
-          disabled={!ranked.length || saving}
-          className="rounded-lg border border-[#7B1113]/30 px-4 py-2 text-xs font-bold text-[#7B1113] hover:bg-[#7B1113]/5 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save & Send to CHED"}
-        </button>
-        <button
-          onClick={exportCsv}
+          onClick={exportPreprocessedCsv}
           disabled={!ranked.length}
-          className="rounded-lg border border-[#7B1113]/30 px-4 py-2 text-xs font-bold text-[#7B1113] hover:bg-[#7B1113]/5 disabled:opacity-50"
+          className="rounded-lg bg-gradient-to-r from-[#7B1113] to-[#540111] px-4 py-2 text-xs font-bold text-white shadow-md hover:brightness-110 disabled:opacity-50"
+          title="Fills missing values and encodes categorical fields as binary/numeric"
         >
-          Export Ranking CSV (full details)
+          Export ML Training CSV (Preprocessed)
         </button>
         <button
           onClick={exportChedFormsCsv}
@@ -404,16 +367,15 @@ export default function MLRankingPage() {
       {ranked.length === 0 ? (
         <EmptyState icon="&#129302;" title="No ranking generated yet" hint="Click Run ML Ranking to prioritize pending applicants." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-[#241012]/[0.06] bg-white shadow-sm">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
+            <thead className="bg-[#FAF7F5] text-[10px] uppercase tracking-wide text-[#6B5458]">
               <tr>
                 <th className="px-4 py-3">Rank</th>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Student #</th>
                 <th className="px-4 py-3">Scholarship</th>
                 <th className="px-4 py-3">Annual Income</th>
-                <th className="px-4 py-3">GWA/GPA</th>
                 <th className="px-4 py-3">Year</th>
                 <th className="px-4 py-3">Sex</th>
                 <th className="px-4 py-3">ITR</th>
@@ -423,16 +385,13 @@ export default function MLRankingPage() {
             </thead>
             <tbody>
               {ranked.map((r, i) => (
-                <tr key={r.application_id} className="border-t border-gray-100">
+                <tr key={r.application_id} className="border-t border-[#241012]/[0.06]">
                   <td className="px-4 py-3 font-bold text-[#7B1113]">#{i + 1}</td>
                   <td className="px-4 py-3 font-semibold">{r.student_name}</td>
                   <td className="px-4 py-3 text-[#6B5458]">{r.student_number}</td>
                   <td className="px-4 py-3 text-[#6B5458]">{r.scholarship}</td>
                   <td className="px-4 py-3 font-semibold">
                     {r.income != null ? `\u20B1${Number(r.income).toLocaleString()}` : "\u2014"}
-                  </td>
-                  <td className="px-4 py-3 text-[#6B5458]">
-                    {r.gwa != null ? Number(r.gwa).toFixed(2) : "\u2014"}
                   </td>
                   <td className="px-4 py-3 text-[#6B5458]">{r.year_level || "\u2014"}</td>
                   <td className="px-4 py-3 text-[#6B5458]">{r.sex || "\u2014"}</td>
@@ -445,7 +404,7 @@ export default function MLRankingPage() {
                         Uploaded / View ITR
                       </button>
                     ) : (
-                      <span className="text-gray-400">None</span>
+                      <span className="text-[#8B7376]">None</span>
                     )}
                   </td>
                   <td className="px-4 py-3 font-semibold">{r.priority_score}</td>

@@ -56,4 +56,12 @@ Accountest.txt
 
 # local dev logs
 dev-server.log
+dev-server.pid
 *.log
+
+# local working files / DB dumps & notes (may contain test credentials)
+*.sql
+*.docx
+csv in applications schoalrships.txt
+updated comments.txt
+balaba-magbaril-system-Comments.docx

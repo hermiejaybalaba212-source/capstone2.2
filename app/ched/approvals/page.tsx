@@ -192,7 +192,7 @@ export default function ChedApprovalsPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#f0f2f8] px-6">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
         </div>
       </main>
     );
@@ -202,8 +202,8 @@ export default function ChedApprovalsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Scholarships Approval List</h1>
-          <p className="mt-1 text-xs text-gray-500">
+          <h1 className="text-xl font-bold text-[#241012]">Scholarships Approval List</h1>
+          <p className="mt-1 text-xs text-[#6B5458]">
             {approvals.length > 0 ? `${approvals.length} beneficiary(ies) already approved — send the final list to the Administrator for registrar validation and student notification.` : "Approve applicants here. Only approved scholars will appear in the final list."}
           </p>
         </div>
@@ -211,14 +211,14 @@ export default function ChedApprovalsPage() {
           <button
             onClick={exportFinalList}
             disabled={!approvals.length}
-            className="rounded-lg border border-[#1e3a5f]/30 px-4 py-2 text-xs font-bold text-[#1e3a5f] hover:bg-[#1e3a5f]/5 disabled:opacity-50"
+            className="rounded-lg border border-[#7B1113]/30 px-4 py-2 text-xs font-bold text-[#7B1113] hover:bg-[#7B1113]/5 disabled:opacity-50"
           >
             Export CSV
           </button>
           <button
             onClick={handleSendToAdmin}
             disabled={!approvals.length}
-            className="rounded-lg bg-[#1e3a5f] px-4 py-2 text-xs font-bold text-white hover:bg-[#152b48] disabled:opacity-50"
+            className="rounded-lg bg-[#7B1113] px-4 py-2 text-xs font-bold text-white hover:bg-[#540111] disabled:opacity-50"
           >
             Send Final List to Admin
           </button>
@@ -226,13 +226,13 @@ export default function ChedApprovalsPage() {
       </div>
 
       {approvals.length > 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-800">
+        <div className="rounded-xl border border-blue-200 bg-[#7B1113]/[0.06] px-4 py-3 text-xs font-medium text-[#7B1113]">
           {approvals.length} beneficiary(ies) approved. The final list will be sent to the Administrator for Registrar validation and student notification.
         </div>
       )}
 
       {busyMsg && (
-        <div className="rounded-xl border border-[#1e3a5f]/20 bg-white px-4 py-3 text-xs font-medium text-[#1e3a5f] shadow-sm">
+        <div className="rounded-xl border border-[#7B1113]/20 bg-white px-4 py-3 text-xs font-medium text-[#7B1113] shadow-sm">
           {busyMsg}
         </div>
       )}
@@ -245,14 +245,14 @@ export default function ChedApprovalsPage() {
             const approval = approvalFor(a.application_id);
             const comp = completenessFor(a.student_id);
             return (
-              <div key={a.application_id} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div key={a.application_id} className="flex flex-col gap-3 rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-gray-900">
+                  <p className="text-sm font-bold text-[#241012]">
                     {a.student_accounts?.last_name}, {a.student_accounts?.given_name}{" "}
-                    <span className="font-normal text-gray-400">({a.student_accounts?.student_number})</span>
+                    <span className="font-normal text-[#8B7376]">({a.student_accounts?.student_number})</span>
                   </p>
-                  <p className="text-xs font-semibold text-[#1e3a5f]">{a.scholarship_programs?.scholarship_name}</p>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-xs font-semibold text-[#7B1113]">{a.scholarship_programs?.scholarship_name}</p>
+                  <p className="text-[11px] text-[#8B7376]">
                     {a.student_accounts?.program_name} &middot; Submitted {formatDate(a.application_date)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -283,7 +283,7 @@ export default function ChedApprovalsPage() {
                     <button
                       onClick={() => handleApprove(a)}
                       disabled={approvingId === a.application_id}
-                      className="rounded-lg bg-[#1e3a5f] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#152b48] disabled:opacity-60"
+                      className="rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#540111] disabled:opacity-60"
                     >
                       {approvingId === a.application_id ? "Processing..." : "Approve as scholar"}
                     </button>
@@ -295,7 +295,7 @@ export default function ChedApprovalsPage() {
         </div>
       )}
 
-      <p className="pt-2 text-[11px] leading-relaxed text-gray-400">
+      <p className="pt-2 text-[11px] leading-relaxed text-[#8B7376]">
         UC06 &mdash; After approving beneficiaries, click &quot;Send Final List to Admin&quot; to export and deliver the approved list to the Administrator. The Administrator validates students against the Registrar database, updates application statuses, and notifies all applicants.
       </p>
     </div>

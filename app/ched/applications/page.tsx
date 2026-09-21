@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 
 const FILTER_TABS = [
-  { key: "", label: "All", active: "bg-[#1e3a5f] text-white", idle: "text-[#5b6b7d] hover:bg-[#1e3a5f]/5 hover:text-[#1e3a5f]" },
+  { key: "", label: "All", active: "bg-[#7B1113] text-white", idle: "text-[#6B5458] hover:bg-[#7B1113]/5 hover:text-[#7B1113]" },
   { key: "Pending", label: "Pending", active: "bg-amber-500 text-white", idle: "text-amber-700 hover:bg-amber-50" },
   { key: "Approved", label: "Approved", active: "bg-green-600 text-white", idle: "text-green-700 hover:bg-green-50" },
   { key: "Not Approved", label: "Not Approved", active: "bg-red-600 text-white", idle: "text-red-600 hover:bg-red-50" },
@@ -449,7 +449,7 @@ export default function ChedApplicationsPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#f0f2f8] px-6">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
         </div>
       </main>
     );
@@ -459,20 +459,20 @@ export default function ChedApplicationsPage() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#1e3a5f]">Scholarship Applications</h1>
-          <p className="mt-1 text-xs text-[#7d8ea3]">{applications.length} student application(s) received by CHED.</p>
+          <h1 className="text-xl font-bold text-[#7B1113]">Scholarship Applications</h1>
+          <p className="mt-1 text-xs text-[#8B7376]">{applications.length} student application(s) received by CHED.</p>
         </div>
         <button
           onClick={exportCsv}
           disabled={!filteredApps.length}
-          className="self-start rounded-xl border border-[#1e3a5f]/30 px-4 py-2.5 text-xs font-bold text-[#1e3a5f] transition hover:bg-[#1e3a5f]/5 disabled:opacity-40"
+          className="self-start rounded-xl border border-[#7B1113]/30 px-4 py-2.5 text-xs font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5 disabled:opacity-40"
         >
           &#11015; Export CSV
         </button>
       </div>
 
       {message && (
-        <div className="rounded-xl border border-[#1e3a5f]/20 bg-white px-4 py-3 text-xs font-medium text-[#1e3a5f] shadow-sm">
+        <div className="rounded-xl border border-[#7B1113]/20 bg-white px-4 py-3 text-xs font-medium text-[#7B1113] shadow-sm">
           {message}
         </div>
       )}
@@ -484,7 +484,7 @@ export default function ChedApplicationsPage() {
             <button
               key={tab.key || "all"}
               onClick={() => setStatusFilter(tab.key)}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${statusFilter === tab.key ? tab.active : `${tab.idle} border border-transparent`} ${statusFilter === tab.key ? "" : "border border-gray-200"}`}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${statusFilter === tab.key ? tab.active : `${tab.idle} border border-transparent`} ${statusFilter === tab.key ? "" : "border border-[#241012]/[0.06]"}`}
             >
               {tab.label} ({count})
             </button>
@@ -496,19 +496,19 @@ export default function ChedApplicationsPage() {
         <EmptyState icon="&#128196;" title="No applications found" hint="Applications will appear here once students submit them." />
       ) : (
         <div className="space-y-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#1e3a5f]">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#7B1113]">
                 <input
                   type="checkbox"
                   checked={filteredApps.length > 0 && filteredApps.every((a) => selectedIds.has(a.application_id))}
                   onChange={toggleSelectAll}
-                  className="h-4 w-4 accent-[#1e3a5f]"
+                  className="h-4 w-4 accent-[#7B1113]"
                 />
                 Select all ({filteredApps.length})
               </label>
               {selectedIds.size > 0 && (
-                <span className="rounded-full bg-[#1e3a5f]/10 px-2.5 py-1 text-[11px] font-bold text-[#1e3a5f]">{selectedIds.size} selected</span>
+                <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-1 text-[11px] font-bold text-[#7B1113]">{selectedIds.size} selected</span>
               )}
             </div>
 
@@ -538,12 +538,12 @@ export default function ChedApplicationsPage() {
                 value={batchMsg}
                 onChange={(e) => setBatchMsg(e.target.value)}
                 placeholder="Notification message for selected students..."
-                className="min-w-40 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-[#1e3a5f]"
+                className="min-w-40 flex-1 rounded-lg border border-[#241012]/[0.06] px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
               <button
                 onClick={batchNotify}
                 disabled={!selectedIds.size || batchBusy}
-                className="rounded-lg border border-[#1e3a5f]/30 px-3 py-2 text-[11px] font-bold text-[#1e3a5f] transition hover:bg-[#1e3a5f]/5 disabled:opacity-40"
+                className="rounded-lg border border-[#7B1113]/30 px-3 py-2 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5 disabled:opacity-40"
               >
                 Notify selected
               </button>
@@ -553,29 +553,29 @@ export default function ChedApplicationsPage() {
           {filteredApps.map((app) => {
             const currentStatus = app.application_status;
             return (
-              <div key={app.application_id} className={`rounded-xl border bg-white p-4 shadow-sm transition ${selectedIds.has(app.application_id) ? "border-[#1e3a5f] ring-1 ring-[#1e3a5f]/20" : "border-gray-200"}`}>
+              <div key={app.application_id} className={`rounded-xl border bg-white p-4 shadow-sm transition ${selectedIds.has(app.application_id) ? "border-[#7B1113] ring-1 ring-[#7B1113]/20" : "border-[#241012]/[0.06]"}`}>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(app.application_id)}
                       onChange={() => toggleSelect(app.application_id)}
-                      className="mt-1 h-4 w-4 shrink-0 accent-[#1e3a5f]"
+                      className="mt-1 h-4 w-4 shrink-0 accent-[#7B1113]"
                       title="Select this application"
                     />
-                    <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#1e3a5f]/10 text-sm font-bold text-[#1e3a5f]">
+                    <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#7B1113]/10 text-sm font-bold text-[#7B1113]">
                       {app.student_accounts?.given_name?.[0] || "S"}{app.student_accounts?.last_name?.[0] || ""}
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-bold text-[#1e3a5f]">
+                        <p className="text-sm font-bold text-[#7B1113]">
                           {app.student_accounts?.last_name}, {app.student_accounts?.given_name}
-                          <span className="font-normal text-[#7d8ea3]"> ({app.student_accounts?.student_number || "\u2014"})</span>
+                          <span className="font-normal text-[#8B7376]"> ({app.student_accounts?.student_number || "\u2014"})</span>
                         </p>
                         <Badge className={STATUS_STYLES[currentStatus] || ""}>{currentStatus}</Badge>
                       </div>
-                      <p className="mt-0.5 text-xs text-[#1e3a5f]">{app.scholarship_programs?.scholarship_name || "\u2014"}</p>
-                      <p className="text-[11px] text-[#7d8ea3]">{app.student_accounts?.program_name || "\u2014"} &middot; Submitted {formatDateTime(app.application_date)}</p>
+                      <p className="mt-0.5 text-xs text-[#7B1113]">{app.scholarship_programs?.scholarship_name || "\u2014"}</p>
+                      <p className="text-[11px] text-[#8B7376]">{app.student_accounts?.program_name || "\u2014"} &middot; Submitted {formatDateTime(app.application_date)}</p>
                     </div>
                   </div>
 
@@ -593,17 +593,17 @@ export default function ChedApplicationsPage() {
                     ))}
                     <button
                       onClick={() => openDetails(app.application_id)}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-[11px] font-bold text-[#1e3a5f] transition hover:bg-gray-50"
+                      className="rounded-lg border border-[#241012]/15 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#FAF7F5]"
                     >
                       View Details
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-gray-100 bg-gray-50/60 p-2.5 sm:flex-row sm:items-center">
+                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-2.5 sm:flex-row sm:items-center">
                   <button
                     onClick={() => handleNotify(app)}
-                    className="rounded-lg border border-[#1e3a5f]/30 px-3 py-1.5 text-[11px] font-bold text-[#1e3a5f] transition hover:bg-[#1e3a5f]/5"
+                    className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5"
                   >
                     Notify student
                   </button>
@@ -612,11 +612,11 @@ export default function ChedApplicationsPage() {
                     onChange={(e) => setNotifyDraft((prev) => ({ ...prev, [app.application_id]: e.target.value }))}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNotify(app); } }}
                     placeholder="Send this student a message..."
-                    className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs outline-none focus:border-[#1e3a5f]"
+                    className="flex-1 rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-1.5 text-xs outline-none focus:border-[#7B1113]"
                   />
                   <button
                     onClick={() => openDetails(app.application_id)}
-                    className="rounded-lg bg-[#1e3a5f] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#152b48]"
+                    className="rounded-lg bg-[#7B1113] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#540111]"
                   >
                     Update status &amp; docs
                   </button>
@@ -628,16 +628,16 @@ export default function ChedApplicationsPage() {
       )}
 
       {viewingApp && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[#1e3a5f]/50 p-4 backdrop-blur-sm sm:p-8" onClick={() => setViewingId(null)}>
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[#7B1113]/50 p-4 backdrop-blur-sm sm:p-8" onClick={() => setViewingId(null)}>
           <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
+            <div className="flex items-start justify-between gap-4 border-b border-[#241012]/[0.06] p-5">
               <div className="min-w-0">
-                <h3 className="text-lg font-bold text-[#1e3a5f]">Application Details</h3>
-                <p className="mt-0.5 text-xs text-[#7d8ea3]">
+                <h3 className="text-lg font-bold text-[#7B1113]">Application Details</h3>
+                <p className="mt-0.5 text-xs text-[#8B7376]">
                   {viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name} &middot; {viewingApp.student_accounts?.student_number || "\u2014"}
                 </p>
               </div>
-              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#7d8ea3] transition hover:bg-gray-100 hover:text-[#1e3a5f]" aria-label="Close">
+              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#8B7376] transition hover:bg-[#F3EEEB] hover:text-[#7B1113]" aria-label="Close">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -645,82 +645,90 @@ export default function ChedApplicationsPage() {
             <div className="max-h-[calc(100vh-12rem)] space-y-6 overflow-y-auto p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={STATUS_STYLES[viewingApp.application_status] || ""}>{viewingApp.application_status}</Badge>
-                <Badge className="border-gray-200 bg-gray-100 text-[#5b6b7d]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
-                <button onClick={() => exportOneCsv(viewingApp)} className="rounded-lg border border-[#1e3a5f]/30 px-3 py-1.5 text-[11px] font-bold text-[#1e3a5f] transition hover:bg-[#1e3a5f]/5">
+                <Badge className="border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
+                <button onClick={() => exportOneCsv(viewingApp)} className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5">
                   &#11015; Export full form CSV
                 </button>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Applicant Profile</h4>
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-4">
+                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Applicant Profile</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Full Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name}</p></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Student No.</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{viewingApp.student_accounts?.student_number || "\u2014"}</p></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Program</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{viewingApp.student_accounts?.program_name || "\u2014"}</p></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Year Level</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{viewingApp.student_accounts?.year_level || "\u2014"}</p></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Sex</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{viewingApp.student_accounts?.sex || "\u2014"}</p></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Registration</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.registration_status === "Verified" ? "border-green-200 bg-green-50 text-green-700" : "border-amber-200 bg-amber-50 text-amber-700"}>{viewingApp.student_accounts?.registration_status || "\u2014"}</Badge></div></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-100 text-gray-600"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Submitted</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{formatDateTime(viewingApp.application_date)}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Full Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Student No.</p><p className="mt-0.5 font-semibold text-[#7B1113]">{viewingApp.student_accounts?.student_number || "\u2014"}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Program</p><p className="mt-0.5 font-semibold text-[#7B1113]">{viewingApp.student_accounts?.program_name || "\u2014"}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Year Level</p><p className="mt-0.5 font-semibold text-[#7B1113]">{viewingApp.student_accounts?.year_level || "\u2014"}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Sex</p><p className="mt-0.5 font-semibold text-[#7B1113]">{viewingApp.student_accounts?.sex || "\u2014"}</p></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Registration</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.registration_status === "Verified" ? "border-green-200 bg-green-50 text-green-700" : "border-amber-200 bg-amber-50 text-amber-700"}>{viewingApp.student_accounts?.registration_status || "\u2014"}</Badge></div></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Submitted</p><p className="mt-0.5 font-semibold text-[#7B1113]">{formatDateTime(viewingApp.application_date)}</p></div>
                 </div>
               </div>
 
               {appChed(viewingApp).length > 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Application Form Submitted</h4>
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
+                  <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form Submitted</h4>
                   {appChed(viewingApp).map((c) => (
                     <div key={c.ched_form_id} className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Last Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.last_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">First Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.given_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Middle Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.middle_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Ext. Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.ext_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Sex</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.sex || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Birthdate</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.birthdate || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Program</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.complete_program_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Year Level</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.year_level || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Father&apos;s Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.father_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Mother&apos;s Name</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.mother_name || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Street / Barangay</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.street_barangay || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Zipcode</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.zipcode || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Contact Number</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.contact_number || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Email Address</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.email_address || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Disability</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.disability || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">IP Group</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">{c.indigenous_people_group || "\u2014"}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">Annual Family Income</p><p className="mt-0.5 font-semibold text-[#1e3a5f]">&#8369;{Number(c.annual_income_family || 0).toLocaleString()}/yr</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Last Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.last_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">First Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.given_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Middle Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.middle_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Ext. Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.ext_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Sex</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.sex || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Birthdate</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.birthdate || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Program</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.complete_program_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Year Level</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.year_level || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Father&apos;s Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.father_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Mother&apos;s Name</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.mother_name || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Street / Barangay</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.street_barangay || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Zipcode</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.zipcode || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Contact Number</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.contact_number || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Email Address</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.email_address || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Disability</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.disability || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">IP Group</p><p className="mt-0.5 font-semibold text-[#7B1113]">{c.indigenous_people_group || "\u2014"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Annual Family Income</p><p className="mt-0.5 font-semibold text-[#7B1113]">&#8369;{Number(c.annual_income_family || 0).toLocaleString()}/yr</p></div>
                       <div>
-                        <p className="text-[10px] uppercase tracking-wide text-[#7d8ea3]">ITR File</p>
-                        {c.income_tax_return && fileUrls[c.income_tax_return] ? (
-                          <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-0.5 inline-block font-semibold text-[#1e3a5f] hover:underline">View ITR</a>
-                        ) : c.income_tax_return ? (
-                          <p className="mt-0.5 text-[10px] font-semibold text-[#7d8ea3]">uploaded</p>
-                        ) : <p className="mt-0.5 font-semibold text-[#1e3a5f]">{"\u2014"}</p>}
+                        <p className="text-[10px] uppercase tracking-wide text-[#8B7376]">ITR File</p>
+                        {c.income_tax_return ? (
+                          fileUrls[c.income_tax_return] ? (
+                            <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-[#7B1113] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#540111]" title="Open the submitted Income Tax Return in a new tab">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5h18M3 6h18M12 6v18M10.5 3h3M4.5 21h15a1.5 1.5 0 001.5-1.5V7.5A1.5 1.5 0 0019.5 6h-15A1.5 1.5 0 003 7.5v12A1.5 1.5 0 004.5 21z" /></svg>
+                              View ITR
+                            </a>
+                          ) : (
+                            <button type="button" disabled className="mt-1 inline-flex cursor-default items-center gap-1.5 rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-semibold text-[#8B7376]" title="Opening...">
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#7B1113]/30 border-t-[#7B1113]" />
+                              Opening ITR...
+                            </button>
+                          )
+                        ) : <p className="mt-0.5 font-semibold text-[#7B1113]">{"\u2014"}</p>}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Application Form</h4>
-                  <p className="mt-2 text-[11px] text-[#7d8ea3]">The student has not completed the CHED application form yet.</p>
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form</h4>
+                  <p className="mt-2 text-[11px] text-[#8B7376]">The student has not completed the CHED application form yet.</p>
                 </div>
               )}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Academic Records ({appAcads(viewingApp).length})</h4>
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
+                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Academic Records ({appAcads(viewingApp).length})</h4>
                 {appAcads(viewingApp).length === 0 ? (
-                  <p className="text-[11px] text-[#7d8ea3]">No academic records uploaded.</p>
+                  <p className="text-[11px] text-[#8B7376]">No academic records uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appAcads(viewingApp).map((a) => (
-                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-3 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#5b6b7d]">{a.applicant_type || "N/A"}</Badge>
-                          <span className="font-semibold text-[#1e3a5f]">GWA/GPA: {a.shs_gwa ?? a.college_gpa ?? "\u2014"}</span>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{a.applicant_type || "N/A"}</Badge>
+                          <span className="font-semibold text-[#7B1113]">GWA/GPA: {a.shs_gwa ?? a.college_gpa ?? "\u2014"}</span>
                         </div>
                         {a.proof_image_path && fileUrls[a.proof_image_path] ? (
-                          <a href={fileUrls[a.proof_image_path]} target="_blank" rel="noreferrer" className="font-semibold text-[#1e3a5f] hover:underline">View proof</a>
+                          <a href={fileUrls[a.proof_image_path]} target="_blank" rel="noreferrer" className="font-semibold text-[#7B1113] hover:underline">View proof</a>
                         ) : a.proof_image_path ? (
-                          <span className="text-[10px] font-semibold text-[#7d8ea3]">uploaded</span>
+                          <span className="text-[10px] font-semibold text-[#8B7376]">uploaded</span>
                         ) : null}
                       </li>
                     ))}
@@ -728,22 +736,22 @@ export default function ChedApplicationsPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Support Documents ({appDocs(viewingApp).length})</h4>
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
+                <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Support Documents ({appDocs(viewingApp).length})</h4>
                 {appDocs(viewingApp).length === 0 ? (
-                  <p className="text-[11px] text-[#7d8ea3]">No documents uploaded.</p>
+                  <p className="text-[11px] text-[#8B7376]">No documents uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appDocs(viewingApp).map((d) => (
-                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-2 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#5b6b7d]">{d.document_type}</Badge>
-                          <span className="text-[10px] text-[#7d8ea3]">{d.file_path.split("/").pop()}</span>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{d.document_type}</Badge>
+                          <span className="text-[10px] text-[#8B7376]">{d.file_path.split("/").pop()}</span>
                         </div>
                         {fileUrls[d.file_path] ? (
-                          <a href={fileUrls[d.file_path]} target="_blank" rel="noreferrer" className="font-semibold text-[#1e3a5f] hover:underline">View</a>
+                          <a href={fileUrls[d.file_path]} target="_blank" rel="noreferrer" className="font-semibold text-[#7B1113] hover:underline">View</a>
                         ) : (
-                          <span className="text-[10px] font-semibold text-[#7d8ea3]">uploaded</span>
+                          <span className="text-[10px] font-semibold text-[#8B7376]">uploaded</span>
                         )}
                       </li>
                     ))}
@@ -752,10 +760,10 @@ export default function ChedApplicationsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 p-5">
+            <div className="flex flex-col gap-3 border-t border-[#241012]/[0.06] p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ea3]">Update Status</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Update Status</h4>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {STATUS_ACTIONS.map((action) => {
                       const draft = statusDraft[viewingApp.application_id] || { status: viewingApp.application_status, remarks: viewingApp.remarks || "" };
@@ -774,7 +782,7 @@ export default function ChedApplicationsPage() {
                 </div>
                 <button
                   onClick={() => exportOneCsv(viewingApp)}
-                  className="self-start rounded-xl bg-[#1e3a5f] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#152b48]"
+                  className="self-start rounded-xl bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#540111]"
                 >
                   &#11015; Export form CSV
                 </button>
@@ -784,12 +792,12 @@ export default function ChedApplicationsPage() {
                 value={(statusDraft[viewingApp.application_id] && statusDraft[viewingApp.application_id].remarks) ?? viewingApp.remarks ?? ""}
                 onChange={(e) => setStatusDraft((prev) => ({ ...prev, [viewingApp.application_id]: { status: prev[viewingApp.application_id]?.status ?? viewingApp.application_status, remarks: e.target.value } }))}
                 placeholder="Remarks (sent to the student)..."
-                className="rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-[#1e3a5f]"
+                className="rounded-lg border border-[#241012]/[0.06] px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
               <button
                 onClick={() => handleStatusSave(viewingApp)}
                 disabled={savingId !== null}
-                className="rounded-xl bg-gradient-to-r from-[#1e3a5f] to-[#152b48] px-4 py-2.5 text-xs font-bold text-white transition hover:brightness-110 disabled:opacity-40"
+                className="rounded-xl bg-gradient-to-r from-[#7B1113] to-[#540111] px-4 py-2.5 text-xs font-bold text-white transition hover:brightness-110 disabled:opacity-40"
               >
                 {savingId === viewingApp.application_id ? "Saving..." : "Save Status + Notify Student"}
               </button>
@@ -798,7 +806,7 @@ export default function ChedApplicationsPage() {
         </div>
       )}
 
-      <p className="pt-2 text-[11px] leading-relaxed text-[#7d8ea3]">
+      <p className="pt-2 text-[11px] leading-relaxed text-[#8B7376]">
         Approving one program for a student automatically marks their other applications as Not Approved.
       </p>
     </div>

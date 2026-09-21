@@ -31,9 +31,9 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       sb.from("early_warning_alerts").select("warning_id", { count: "exact", head: true }).eq("status", "Active").then(({ count }) => { setNotifCount(count ?? 0); });
     });
   }, [router]);
-  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/"); };
+  const handleLogout = async () => { await getSupabase().auth.signOut(); router.push("/login"); };
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAF7F5]">
       <Sidebar items={MENU_ITEMS} title="St. Peter's College" subtitle="Faculty Monitoring Console" username={username} userRole="Faculty" onLogout={handleLogout} notificationCount={notifCount} notificationHref="/faculty/alerts" />
       <main className="min-h-screen p-4 pt-16 lg:ml-64 lg:p-8 lg:pt-6">{children}</main>
     </div>

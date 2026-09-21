@@ -3,8 +3,9 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
+import { getRegistrarSupabase } from "@/lib/supabase/registrar";
 import { formatDate } from "@/lib/utils";
-import { STATUS_STYLES } from "@/lib/constants";
+import { STATUS_STYLES, PROGRAMS, YEAR_LEVELS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -30,7 +31,18 @@ interface StudentDetail {
   program_name?: string;
   year_level?: string;
   sex?: string;
+  birthdate?: string;
   registration_status?: string;
+}
+
+interface EditForm {
+  username: string;
+  middle_name: string;
+  ext_name: string;
+  sex: string;
+  birthdate: string;
+  program_name: string;
+  year_level: string;
 }
 
 export default function UserManagementPage() {
@@ -40,7 +52,12 @@ export default function UserManagementPage() {
   const [students, setStudents] = useState<StudentDetail[]>([]);
   const [me, setMe] = useState<User | null>(null);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"ok" | "err" | "">("");
   const [search, setSearch] = useState("");
+  const [verifyingId, setVerifyingId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -90,19 +107,159 @@ export default function UserManagementPage() {
 
   async function handleRoleChange(user: User, newRole: string) {
     setMessage("");
+    setMessageType("");
     const sb = getSupabase();
     const { error } = await sb.from("users").update({ role: newRole }).eq("user_id", user.user_id);
-    if (error) { setMessage(error.message); return; }
+    if (error) { setMessage(error.message); setMessageType("err"); return; }
     setUsers((prev) => prev.map((u) => u.user_id === user.user_id ? { ...u, role: newRole } : u));
   }
 
   async function handleToggleStatus(user: User) {
     setMessage("");
+    setMessageType("");
     const nextStatus = user.status === "Active" ? "Inactive" : "Active";
     const sb = getSupabase();
     const { error } = await sb.from("users").update({ status: nextStatus }).eq("user_id", user.user_id);
-    if (error) { setMessage(error.message); return; }
+    if (error) { setMessage(error.message); setMessageType("err"); return; }
     setUsers((prev) => prev.map((u) => u.user_id === user.user_id ? { ...u, status: nextStatus } : u));
+  }
+
+  async function handleVerify(user: User, student: StudentDetail | undefined) {
+    setMessage("");
+    setMessageType("");
+    if (!student || !student.student_number) {
+      setMessage("No student record linked to this account, so it cannot be verified against the Registrar.");
+      setMessageType("err");
+      return;
+    }
+    setVerifyingId(user.user_id);
+    const rsb = getRegistrarSupabase();
+    const { data: regRows, error: regErr } = await rsb
+      .from("registrar_students")
+      .select("*")
+      .eq("student_number", student.student_number.trim())
+      .maybeSingle();
+
+    if (regErr) {
+      setVerifyingId(null);
+      setMessage(`Registrar lookup failed: ${regErr.message}`);
+      setMessageType("err");
+      return;
+    }
+
+    let isEnrolled = false;
+    if (regRows) {
+      isEnrolled = !!regRows.registration_status && regRows.registration_status === "Enrolled";
+      if (!isEnrolled) {
+        const { data: enrollRows, error: enrollErr } = await rsb
+          .from("registrar_enrollment")
+          .select("enrollment_status")
+          .eq("student_id", regRows.student_id)
+          .eq("enrollment_status", "Enrolled")
+          .limit(1);
+        if (!enrollErr) isEnrolled = !!enrollRows?.length;
+      }
+    }
+
+    if (!regRows || !isEnrolled) {
+      setVerifyingId(null);
+      setMessage(`No enrolled record found in the Registrar database for student number ${student.student_number}. The account stays Unverified.`);
+      setMessageType("err");
+      return;
+    }
+
+    const sb = getSupabase();
+    const { error: updateErr } = await sb
+      .from("student_accounts")
+      .update({ registration_status: "Verified" })
+      .eq("student_id", student.student_id);
+
+    setVerifyingId(null);
+
+    if (updateErr) {
+      setMessage(`Record found in Registrar but could not update status: ${updateErr.message}`);
+      setMessageType("err");
+      return;
+    }
+
+    setStudents((prev) => prev.map((s) => s.student_id === student.student_id ? { ...s, registration_status: "Verified" } : s));
+    setMessage(`Verified from Registrar — ${student.given_name} ${student.last_name} matched an enrolled record (${student.student_number}).`);
+    setMessageType("ok");
+  }
+
+  function openEdit(user: User, student: StudentDetail | undefined) {
+    setEditingUserId(user.user_id);
+    setEditForm({
+      username: user.username,
+      middle_name: student?.middle_name || "",
+      ext_name: student?.ext_name || "",
+      sex: student?.sex || "",
+      birthdate: student?.birthdate || "",
+      program_name: student?.program_name || "",
+      year_level: student?.year_level || "",
+    });
+  }
+
+  async function handleEditSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editForm || editingUserId === null) return;
+    setMessage("");
+    setMessageType("");
+    setSavingEdit(true);
+    const sb = getSupabase();
+
+    const { data: studentRow } = await sb
+      .from("student_accounts")
+      .select("student_id, given_name, last_name")
+      .eq("user_id", editingUserId)
+      .maybeSingle();
+
+    if (studentRow) {
+      const { error: saErr } = await sb
+        .from("student_accounts")
+        .update({
+          middle_name: editForm.middle_name.trim() || null,
+          ext_name: editForm.ext_name.trim() || null,
+          sex: editForm.sex || null,
+          birthdate: editForm.birthdate || null,
+          program_name: editForm.program_name || null,
+          year_level: editForm.year_level || null,
+        })
+        .eq("student_id", studentRow.student_id);
+      if (saErr) {
+        setSavingEdit(false);
+        setMessage(saErr.message);
+        setMessageType("err");
+        return;
+      }
+      setStudents((prev) => prev.map((s) => s.student_id === studentRow.student_id ? {
+        ...s,
+        middle_name: editForm.middle_name.trim() || undefined,
+        ext_name: editForm.ext_name.trim() || undefined,
+        sex: editForm.sex || undefined,
+        birthdate: editForm.birthdate || undefined,
+        program_name: editForm.program_name || undefined,
+        year_level: editForm.year_level || undefined,
+      } : s));
+    }
+
+    const { error: uErr } = await sb
+      .from("users")
+      .update({ username: editForm.username.trim() })
+      .eq("user_id", editingUserId);
+    if (uErr) {
+      setSavingEdit(false);
+      setMessage(uErr.message);
+      setMessageType("err");
+      return;
+    }
+    setUsers((prev) => prev.map((u) => u.user_id === editingUserId ? { ...u, username: editForm.username.trim() } : u));
+
+    setSavingEdit(false);
+    setEditingUserId(null);
+    setEditForm(null);
+    setMessage("Account details updated successfully.");
+    setMessageType("ok");
   }
 
   function exportCsv() {
@@ -147,14 +304,14 @@ export default function UserManagementPage() {
       </div>
 
       {message && (
-        <div className="rounded-xl border border-[#7B1113]/20 bg-white px-4 py-3 text-xs font-medium text-[#7B1113] shadow-sm">
+        <div className={`rounded-xl border px-4 py-3 text-xs font-medium shadow-sm ${messageType === "err" ? "border-red-200 bg-red-50 text-red-700" : "border-green-200 bg-green-50 text-green-700"}`}>
           {message}
         </div>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B7376]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -162,7 +319,7 @@ export default function UserManagementPage() {
             placeholder="Search by name, username, email, student number, program, year, sex..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]/20"
+            className="w-full rounded-xl border border-[#241012]/[0.06] bg-white py-2.5 pl-10 pr-4 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]/20"
           />
         </div>
         <button
@@ -183,9 +340,9 @@ export default function UserManagementPage() {
       {filteredUsers.length === 0 ? (
         <EmptyState icon="&#128101;" title={search ? "No users match your search" : "No users found"} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-[#241012]/[0.06] bg-white shadow-sm">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
+            <thead className="bg-[#FAF7F5] text-[10px] uppercase tracking-wide text-[#6B5458]">
               <tr>
                 <th className="px-4 py-3">Username</th>
                 <th className="px-4 py-3">Email</th>
@@ -198,6 +355,7 @@ export default function UserManagementPage() {
                     <th className="px-4 py-3">Program</th>
                     <th className="px-4 py-3">Year</th>
                     <th className="px-4 py-3">Sex</th>
+                    <th className="px-4 py-3">Registrar</th>
                   </>
                 )}
                 <th className="px-4 py-3">Created</th>
@@ -209,7 +367,7 @@ export default function UserManagementPage() {
                 const isMe = me?.user_id === u.user_id;
                 const s = getStudent(u.user_id);
                 return (
-                  <tr key={u.user_id} className={`border-t border-gray-100 ${u.status === "Inactive" ? "opacity-50" : ""}`}>
+                  <tr key={u.user_id} className={`border-t border-[#241012]/[0.06] ${u.status === "Inactive" ? "opacity-50" : ""}`}>
                     <td className="px-4 py-3 font-semibold">{u.username}</td>
                     <td className="px-4 py-3 text-[#6B5458]">{u.email}</td>
                     <td className="px-4 py-3">
@@ -217,14 +375,14 @@ export default function UserManagementPage() {
                         value={u.role}
                         onChange={(e) => handleRoleChange(u, e.target.value)}
                         disabled={isMe}
-                        className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#7B1113] disabled:cursor-not-allowed"
+                        className="rounded-lg border border-[#241012]/[0.06] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#7B1113] disabled:cursor-not-allowed"
                       >
                         {roles.map((r) => <option key={r}>{r}</option>)}
                       </select>
                       {isMe && <span className="ml-1 text-[10px] text-[#8B7376]">(you)</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge className={STATUS_STYLES[u.status] || (u.status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-100 text-gray-600")}>
+                      <Badge className={STATUS_STYLES[u.status] || (u.status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]")}>
                         {u.status}
                       </Badge>
                     </td>
@@ -239,27 +397,166 @@ export default function UserManagementPage() {
                         <td className="px-4 py-3 text-[#6B5458]">{s?.program_name || "—"}</td>
                         <td className="px-4 py-3 text-[#6B5458]">{s?.year_level || "—"}</td>
                         <td className="px-4 py-3 text-[#6B5458]">{s?.sex || "—"}</td>
+                        <td className="px-4 py-3">
+                          {s ? (
+                            s.registration_status === "Verified" ? (
+                              <Badge className="border-green-200 bg-green-50 text-green-700">
+                              <span title="Record matched in the Registrar database">&#10003; Verified from Registrar</span>
+                            </Badge>
+                            ) : (
+                              <Badge className="border-amber-200 bg-amber-50 text-amber-700">
+                                Unverified
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-[#8B7376]">—</span>
+                          )}
+                        </td>
                       </>
                     )}
                     <td className="px-4 py-3 text-[#8B7376]">{formatDate(u.created_at)}</td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggleStatus(u)}
-                        disabled={isMe}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed ${
-                          u.status === "Active"
-                            ? "border border-red-200 text-red-600 hover:bg-red-50"
-                            : "border border-green-200 text-green-700 hover:bg-green-50"
-                        }`}
-                      >
-                        {u.status === "Active" ? "Deactivate" : "Activate"}
-                      </button>
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => openEdit(u, s)}
+                          disabled={isMe}
+                          className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5 disabled:cursor-not-allowed disabled:opacity-40"
+                          title="Update this account's details"
+                        >
+                          Edit
+                        </button>
+                        {s && s.registration_status !== "Verified" && (
+                          <button
+                            onClick={() => handleVerify(u, s)}
+                            disabled={isMe || verifyingId === u.user_id}
+                            className="rounded-lg border border-green-300 px-3 py-1.5 text-[11px] font-bold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Automatically check against the Registrar database and mark Verified"
+                          >
+                            {verifyingId === u.user_id ? "Checking Registrar..." : "Verify"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleToggleStatus(u)}
+                          disabled={isMe}
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed ${
+                            u.status === "Active"
+                              ? "border border-red-200 text-red-600 hover:bg-red-50"
+                              : "border border-green-200 text-green-700 hover:bg-green-50"
+                          }`}
+                        >
+                          {u.status === "Active" ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {editingUserId !== null && editForm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-sm font-bold text-[#241012]">Edit User Account</h2>
+            <p className="mt-1 text-xs text-[#8B7376]">
+              Update these details when the student reports a mistake. Changes apply to their record in the system.
+            </p>
+            <form onSubmit={handleEditSave} className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="block text-xs font-semibold text-[#241012] sm:col-span-2">
+                Username
+                <input
+                  type="text"
+                  value={editForm.username}
+                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                  required
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Middle Name
+                <input
+                  type="text"
+                  value={editForm.middle_name}
+                  onChange={(e) => setEditForm({ ...editForm, middle_name: e.target.value })}
+                  placeholder="Optional"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Extension Name
+                <input
+                  type="text"
+                  value={editForm.ext_name}
+                  onChange={(e) => setEditForm({ ...editForm, ext_name: e.target.value })}
+                  placeholder="Jr., III..."
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Sex
+                <select
+                  value={editForm.sex}
+                  onChange={(e) => setEditForm({ ...editForm, sex: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                >
+                  <option value="">Select sex...</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Birthdate
+                <input
+                  type="date"
+                  value={editForm.birthdate}
+                  max={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setEditForm({ ...editForm, birthdate: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012] sm:col-span-2">
+                Program
+                <select
+                  value={editForm.program_name}
+                  onChange={(e) => setEditForm({ ...editForm, program_name: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                >
+                  <option value="">Select program...</option>
+                  {PROGRAMS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Year Level
+                <select
+                  value={editForm.year_level}
+                  onChange={(e) => setEditForm({ ...editForm, year_level: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                >
+                  <option value="">Select year level...</option>
+                  {YEAR_LEVELS.map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </label>
+              <div className="mt-2 flex justify-end gap-2 border-t border-[#241012]/[0.06] pt-4 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => { setEditingUserId(null); setEditForm(null); }}
+                  disabled={savingEdit}
+                  className="rounded-lg border border-[#241012]/[0.06] px-4 py-2 text-xs font-bold text-[#6B5458] hover:bg-[#FAF7F5] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="rounded-lg bg-[#7B1113] px-4 py-2 text-xs font-bold text-white hover:bg-[#540111] disabled:opacity-50"
+                >
+                  {savingEdit ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

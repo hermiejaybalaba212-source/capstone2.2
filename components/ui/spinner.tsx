@@ -7,7 +7,7 @@ const SPINNER_COLORS: Record<string, string> = {
 export function Spinner({ label, color = "maroon" }: SpinnerProps) {
   const ring = SPINNER_COLORS[color] || SPINNER_COLORS.maroon;
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#FAF7F5]">
       <div className={`h-9 w-9 animate-spin rounded-full border-4 border-gray-200 ${ring}`} />
       {label && <p className="text-xs font-medium text-gray-500">{label}</p>}
     </div>

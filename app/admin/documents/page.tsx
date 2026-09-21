@@ -73,13 +73,13 @@ function safeFile(name: string) {
 function Thumb({ url, path, onClick }: { url?: string; path?: string; onClick: () => void }) {
   if (!url) {
     return (
-      <button onClick={onClick} className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-100 text-2xl">
+      <button onClick={onClick} className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-[#241012]/15 bg-[#F3EEEB] text-2xl">
         &#128196;
       </button>
     );
   }
   return (
-    <button onClick={onClick} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100 shadow-sm transition hover:ring-2 hover:ring-[#7B1113]/40">
+    <button onClick={onClick} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#241012]/[0.06] bg-[#F3EEEB] shadow-sm transition hover:ring-2 hover:ring-[#7B1113]/40">
       {isImagePath(path) ? (
         <img src={url} alt="document preview" className="h-full w-full object-cover" />
       ) : (
@@ -105,6 +105,7 @@ export default function AdminDocumentsPage() {
   const [preview, setPreview] = useState<PreviewItem | null>(null);
   const [dlBusy, setDlBusy] = useState(false);
   const [dlProgress, setDlProgress] = useState({ done: 0, total: 0 });
+  const [delBusyKey, setDelBusyKey] = useState<string | null>(null);
 
   async function signBucket(bucket: string, path: string) {
     const sb = getSupabase();
@@ -225,6 +226,35 @@ export default function AdminDocumentsPage() {
     } finally {
       setDlBusy(false);
     }
+  }
+
+  async function deleteOne(kind: "support" | "academic" | "itr", key: number, bucket: string, path: string) {
+    if (!confirm("Delete this document permanently? This cannot be undone.")) return;
+    setDelBusyKey(`${kind}-${key}`);
+    setFlash(null);
+    const sb = getSupabase();
+
+    const table = kind === "support" ? "support_documents" : kind === "academic" ? "support_academic_records" : "ched_form_input";
+    const idCol = kind === "support" ? "document_id" : kind === "academic" ? "record_id" : "ched_form_id";
+
+    const { error } = await sb.from(table).delete().eq(idCol, key);
+    if (!error && path) {
+      const { error: storageErr } = await sb.storage.from(bucket).remove([path]);
+      if (storageErr) setFlash({ type: "err", text: `Record deleted but storage cleanup failed: ${storageErr.message}` });
+    }
+
+    setDelBusyKey(null);
+    if (error) { setFlash({ type: "err", text: error.message }); return; }
+
+    if (kind === "support") setDocs((prev) => prev.filter((d) => d.document_id !== key));
+    if (kind === "academic") setAcads((prev) => prev.filter((a) => a.record_id !== key));
+    if (kind === "itr") setChedForms((prev) => prev.filter((c) => c.ched_form_id !== key));
+    setFileUrls((prev) => {
+      const next = { ...prev };
+      delete next[path];
+      return next;
+    });
+    setFlash({ type: "ok", text: "Document deleted permanently." });
   }
 
   function exportDocumentsCsv() {
@@ -349,7 +379,7 @@ export default function AdminDocumentsPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <label className="text-xs font-semibold text-[#241012]">
           Filter by student
           <select
@@ -394,7 +424,7 @@ export default function AdminDocumentsPage() {
         <EmptyState icon="&#128450;" title="No uploads yet" hint="Files appear here as students upload requirements." />
       ) : (
         <>
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-[#241012]">Support Documents</h2>
               <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#7B1113]">{visibleDocs.length}</span>
@@ -407,7 +437,7 @@ export default function AdminDocumentsPage() {
                   const s = d.scholarship_applications?.student_accounts;
                   const url = fileUrls[d.file_path];
                   return (
-                    <li key={d.document_id} className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
+                    <li key={d.document_id} className="flex items-center gap-4 rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3.5">
                       <Thumb
                         url={url}
                         path={d.file_path}
@@ -436,6 +466,13 @@ export default function AdminDocumentsPage() {
                             Download
                           </button>
                         )}
+                        <button
+                          onClick={() => deleteOne("support", d.document_id, "support-documents", d.file_path)}
+                          disabled={delBusyKey === `support-${d.document_id}`}
+                          className="rounded-xl border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {delBusyKey === `support-${d.document_id}` ? "Deleting..." : "Delete"}
+                        </button>
                       </div>
                     </li>
                   );
@@ -444,7 +481,7 @@ export default function AdminDocumentsPage() {
             )}
           </section>
 
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-[#241012]">Academic Records</h2>
               <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#7B1113]">{visibleAcads.length}</span>
@@ -456,7 +493,7 @@ export default function AdminDocumentsPage() {
                 {visibleAcads.map((a) => {
                   const url = a.proof_image_path ? fileUrls[a.proof_image_path] : undefined;
                   return (
-                    <li key={a.record_id} className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
+                    <li key={a.record_id} className="flex items-center gap-4 rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3.5">
                       <Thumb
                         url={url}
                         path={a.proof_image_path}
@@ -486,6 +523,13 @@ export default function AdminDocumentsPage() {
                             Download
                           </button>
                         )}
+                        <button
+                          onClick={() => deleteOne("academic", a.record_id, "academic-records", a.proof_image_path || "")}
+                          disabled={delBusyKey === `academic-${a.record_id}`}
+                          className="rounded-xl border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {delBusyKey === `academic-${a.record_id}` ? "Deleting..." : "Delete"}
+                        </button>
                       </div>
                     </li>
                   );
@@ -495,7 +539,7 @@ export default function AdminDocumentsPage() {
           </section>
 
           {visibleChed.length > 0 && (
-            <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-[#241012]">ITR Submissions (CHED Forms)</h2>
                 <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#7B1113]">{visibleChed.length}</span>
@@ -505,7 +549,7 @@ export default function AdminDocumentsPage() {
                   const sa = c.scholarship_applications?.student_accounts;
                   const url = c.income_tax_return ? fileUrls[c.income_tax_return] : undefined;
                   return (
-                    <li key={c.ched_form_id} className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
+                    <li key={c.ched_form_id} className="flex items-center gap-4 rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3.5">
                       <Thumb
                         url={url}
                         path={c.income_tax_return}
@@ -534,6 +578,13 @@ export default function AdminDocumentsPage() {
                             Download
                           </button>
                         )}
+                        <button
+                          onClick={() => deleteOne("itr", c.ched_form_id, "itr-documents", c.income_tax_return || "")}
+                          disabled={delBusyKey === `itr-${c.ched_form_id}`}
+                          className="rounded-xl border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {delBusyKey === `itr-${c.ched_form_id}` ? "Deleting..." : "Delete"}
+                        </button>
                       </div>
                     </li>
                   );
@@ -553,7 +604,7 @@ export default function AdminDocumentsPage() {
             className="flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
+            <div className="flex items-center justify-between gap-3 border-b border-[#241012]/[0.06] px-5 py-3">
               <p className="truncate text-xs font-bold text-[#241012]">{preview.name}</p>
               <button
                 onClick={() => setPreview(null)}

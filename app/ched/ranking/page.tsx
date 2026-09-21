@@ -264,7 +264,7 @@ export default function ChedRankingPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#f0f2f8] px-6">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
         </div>
       </main>
     );
@@ -273,17 +273,17 @@ export default function ChedRankingPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Ranking Result</h1>
-        <span className="text-xs text-gray-400">{rankings.length} total ranked</span>
+        <h1 className="text-xl font-bold text-[#241012]">Ranking Result</h1>
+        <span className="text-xs text-[#8B7376]">{rankings.length} total ranked</span>
       </div>
 
       {message && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-800">{message}</div>
+        <div className="rounded-xl border border-blue-200 bg-[#7B1113]/[0.06] px-4 py-3 text-xs font-medium text-[#7B1113]">{message}</div>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B7376]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -291,13 +291,13 @@ export default function ChedRankingPage() {
             placeholder="Search by name, student #, program, year, sex, scholarship..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+            className="w-full rounded-lg border border-[#241012]/[0.06] bg-white py-2 pl-10 pr-4 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]/20"
           />
         </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as "all" | "High Need" | "Low Need")}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700"
+          className="rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2 text-xs font-medium text-[#241012]"
         >
           <option value="all">All ({rankings.length})</option>
           <option value="High Need">High Need ({rankings.filter((r) => r.prediction_result === "High Need").length})</option>
@@ -306,7 +306,7 @@ export default function ChedRankingPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as "all" | "Pending" | "Approved" | "Not Approved")}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700"
+          className="rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2 text-xs font-medium text-[#241012]"
         >
           <option value="all">Status: All</option>
           <option value="Approved">Status: Approved ({rankings.filter((r) => approvals[r.application_id] === "Approved").length})</option>
@@ -322,7 +322,7 @@ export default function ChedRankingPage() {
           {saving ? "Saving..." : `Reject Selected (${selected.size})`}
         </button>
         <button onClick={exportCsv} disabled={!filtered.length}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-[11px] font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          className="rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2 text-[11px] font-bold text-[#241012] hover:bg-[#FAF7F5] disabled:opacity-50">
           Export CSV
         </button>
       </div>
@@ -330,13 +330,13 @@ export default function ChedRankingPage() {
       {rankings.length === 0 ? (
         <EmptyState icon="&#129302;" title="No ranking result yet" hint="The ranking result has not been generated yet. It will appear here once the Administrator runs the ML ranking process." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-[#241012]/[0.06] bg-white shadow-sm">
           <table className="w-full text-left text-xs">
-            <thead className="bg-blue-50 text-[10px] uppercase tracking-wide text-gray-500">
+            <thead className="bg-[#7B1113]/[0.06] text-[10px] uppercase tracking-wide text-[#6B5458]">
               <tr>
                 <th className="px-4 py-3">
                   <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
-                    className="rounded border-gray-300 text-blue-600" />
+                    className="rounded border-[#241012]/15 text-[#7B1113]" />
                 </th>
                 <th className="px-4 py-3">Rank</th>
                 <th className="px-4 py-3">Student ID</th>
@@ -357,20 +357,20 @@ export default function ChedRankingPage() {
                 const sa = getSA(app);
                 const status = approvals[r.application_id];
                 return (
-                  <tr key={r.ranking_id} className="border-t border-gray-100 hover:bg-gray-50">
+                  <tr key={r.ranking_id} className="border-t border-[#241012]/[0.06] hover:bg-[#FAF7F5]">
                     <td className="px-4 py-3">
                       <input type="checkbox" checked={selected.has(r.application_id)} onChange={() => toggleSelect(r.application_id)}
-                        className="rounded border-gray-300 text-blue-600" />
+                        className="rounded border-[#241012]/15 text-[#7B1113]" />
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#1e3a5f]">#{r.ranking_position}</td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-gray-600">{sa?.student_id || "\u2014"}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">{getStudentName(app) || `App #${r.application_id}`}</td>
-                    <td className="px-4 py-3 text-gray-600">{getStudentNumber(app) || "\u2014"}</td>
-                    <td className="px-4 py-3 text-gray-600">{getProgram(app) || "\u2014"}</td>
-                    <td className="px-4 py-3 text-gray-600">{getYearLevel(app) || "\u2014"}</td>
-                    <td className="px-4 py-3 text-gray-600">{getSex(app) || "\u2014"}</td>
-                    <td className="px-4 py-3 text-gray-600">{getScholarshipName(app) || "\u2014"}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">{r.priority_score}</td>
+                    <td className="px-4 py-3 font-bold text-[#7B1113]">#{r.ranking_position}</td>
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#6B5458]">{sa?.student_id || "\u2014"}</td>
+                    <td className="px-4 py-3 font-semibold text-[#241012]">{getStudentName(app) || `App #${r.application_id}`}</td>
+                    <td className="px-4 py-3 text-[#6B5458]">{getStudentNumber(app) || "\u2014"}</td>
+                    <td className="px-4 py-3 text-[#6B5458]">{getProgram(app) || "\u2014"}</td>
+                    <td className="px-4 py-3 text-[#6B5458]">{getYearLevel(app) || "\u2014"}</td>
+                    <td className="px-4 py-3 text-[#6B5458]">{getSex(app) || "\u2014"}</td>
+                    <td className="px-4 py-3 text-[#6B5458]">{getScholarshipName(app) || "\u2014"}</td>
+                    <td className="px-4 py-3 font-semibold text-[#241012]">{r.priority_score}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         r.prediction_result === "High Need" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
@@ -379,13 +379,13 @@ export default function ChedRankingPage() {
                     <td className="px-4 py-3">
                       {status === "Approved" && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Approved</span>}
                       {status === "Not Approved" && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">Rejected</span>}
-                      {!status && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">Pending</span>}
+                      {!status && <span className="rounded-full bg-[#F3EEEB] px-2 py-0.5 text-[10px] font-bold text-[#6B5458]">Pending</span>}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={12} className="px-4 py-8 text-center text-xs text-gray-400">No results match your search</td></tr>
+                <tr><td colSpan={12} className="px-4 py-8 text-center text-xs text-[#8B7376]">No results match your search</td></tr>
               )}
             </tbody>
           </table>

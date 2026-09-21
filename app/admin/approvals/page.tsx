@@ -317,7 +317,7 @@ export default function ApprovalsPage() {
           <button
             key={tab.key}
             onClick={() => setValidationFilter(tab.key)}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${validationFilter === tab.key ? tab.active : `${tab.idle} border border-gray-200`}`}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${validationFilter === tab.key ? tab.active : `${tab.idle} border border-[#241012]/[0.06]`}`}
           >
             {tab.label} ({tab.key === "all" ? approvedEntries.length : tab.key === "Validated" ? validatedCount : notValidatedCount})
           </button>
@@ -333,7 +333,7 @@ export default function ApprovalsPage() {
             const isValidated = appr.validation_status === "Validated";
 
             return (
-              <div key={appr.approval_id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div key={appr.approval_id} className="rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#7B1113]/10 text-sm font-bold text-[#7B1113]">
@@ -345,7 +345,7 @@ export default function ApprovalsPage() {
                           {app?.student_accounts?.last_name}, {app?.student_accounts?.given_name}
                           <span className="font-normal text-[#8B7376]"> ({app?.student_accounts?.student_number || "\u2014"})</span>
                         </p>
-                        <Badge className="border-blue-200 bg-blue-50 text-blue-700">Approved by CHED</Badge>
+                        <Badge className="border-blue-200 bg-[#7B1113]/[0.06] text-[#7B1113]">Approved by CHED</Badge>
                       </div>
                       <p className="mt-0.5 text-xs text-[#7B1113]">{app?.scholarship_programs?.scholarship_name || "\u2014"}</p>
                       <p className="text-[11px] text-[#8B7376]">{app?.student_accounts?.program_name || "\u2014"} &middot; Approved {formatDateTime(appr.approval_date)}</p>
@@ -368,7 +368,7 @@ export default function ApprovalsPage() {
                     </button>
                     <button
                       onClick={() => openDetails(appr.application_id)}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-[11px] font-bold text-[#241012] transition hover:bg-gray-50"
+                      className="rounded-lg border border-[#241012]/15 px-3 py-1.5 text-[11px] font-bold text-[#241012] transition hover:bg-[#FAF7F5]"
                     >
                       View Details
                     </button>
@@ -383,14 +383,14 @@ export default function ApprovalsPage() {
       {viewingApp && viewingAppr && (
         <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[#241012]/50 p-4 backdrop-blur-sm sm:p-8" onClick={() => setViewingId(null)}>
           <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
+            <div className="flex items-start justify-between gap-4 border-b border-[#241012]/[0.06] p-5">
               <div className="min-w-0">
                 <h3 className="text-lg font-bold text-[#241012]">Scholar Details</h3>
                 <p className="mt-0.5 text-xs text-[#8B7376]">
                   {viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name} &middot; {viewingApp.student_accounts?.student_number || "\u2014"}
                 </p>
               </div>
-              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#8B7376] transition hover:bg-gray-100 hover:text-[#241012]" aria-label="Close">
+              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#8B7376] transition hover:bg-[#F3EEEB] hover:text-[#241012]" aria-label="Close">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -398,19 +398,19 @@ export default function ApprovalsPage() {
             <div className="max-h-[calc(100vh-12rem)] space-y-6 overflow-y-auto p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={STATUS_STYLES[viewingAppr.approval_status] || ""}>{viewingAppr.approval_status}</Badge>
-                <Badge className="border-gray-200 bg-gray-100 text-[#6B5458]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
+                <Badge className="border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
                 {viewingAppr.validation_status === "Validated" ? (
                   <Badge className="border-green-200 bg-green-50 text-green-700">&#10003; Validated</Badge>
                 ) : (
                   <Badge className="border-amber-200 bg-amber-50 text-amber-700">{viewingAppr.validation_status || "Not Validated"}</Badge>
                 )}
-                <Badge className="border-blue-200 bg-blue-50 text-blue-700">Approved by CHED</Badge>
+                <Badge className="border-blue-200 bg-[#7B1113]/[0.06] text-[#7B1113]">Approved by CHED</Badge>
                 <button onClick={() => exportOneCsv(viewingAppr)} className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5">
                   &#11015; Export CSV
                 </button>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Applicant Profile</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Full Name</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name}</p></div>
@@ -419,13 +419,13 @@ export default function ApprovalsPage() {
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Year Level</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.year_level || "\u2014"}</p></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Sex</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.sex || "\u2014"}</p></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Registration</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.registration_status === "Verified" ? "border-green-200 bg-green-50 text-green-700" : "border-amber-200 bg-amber-50 text-amber-700"}>{viewingApp.student_accounts?.registration_status || "\u2014"}</Badge></div></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-100 text-gray-600"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Approved</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingAppr.approval_date ? formatDateTime(viewingAppr.approval_date) : "\u2014"}</p></div>
                 </div>
               </div>
 
               {appChed(viewingApp).length > 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                   <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form Submitted</h4>
                   {appChed(viewingApp).map((c) => (
                     <div key={c.ched_form_id} className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
@@ -448,32 +448,40 @@ export default function ApprovalsPage() {
                       <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Annual Family Income</p><p className="mt-0.5 font-semibold text-[#241012]">&#8369;{Number(c.annual_income_family || 0).toLocaleString()}/yr</p></div>
                       <div>
                         <p className="text-[10px] uppercase tracking-wide text-[#8B7376]">ITR File</p>
-                        {c.income_tax_return && fileUrls[c.income_tax_return] ? (
-                          <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-0.5 inline-block font-semibold text-[#7B1113] hover:underline">View ITR</a>
-                        ) : c.income_tax_return ? (
-                          <p className="mt-0.5 text-[10px] font-semibold text-[#8B7376]">uploaded</p>
+                        {c.income_tax_return ? (
+                          fileUrls[c.income_tax_return] ? (
+                            <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-[#7B1113] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#540111]" title="Open the submitted Income Tax Return in a new tab">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5h18M3 6h18M12 6v18M10.5 3h3M4.5 21h15a1.5 1.5 0 001.5-1.5V7.5A1.5 1.5 0 0019.5 6h-15A1.5 1.5 0 003 7.5v12A1.5 1.5 0 004.5 21z" /></svg>
+                              View ITR
+                            </a>
+                          ) : (
+                            <button type="button" disabled className="mt-1 inline-flex cursor-default items-center gap-1.5 rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-semibold text-[#8B7376]" title="Opening...">
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#7B1113]/30 border-t-[#7B1113]" />
+                              Opening ITR...
+                            </button>
+                          )
                         ) : <p className="mt-0.5 font-semibold text-[#241012]">{"\u2014"}</p>}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                   <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form</h4>
                   <p className="mt-2 text-[11px] text-[#8B7376]">The student has not completed the CHED application form yet.</p>
                 </div>
               )}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Academic Records ({appAcads(viewingApp).length})</h4>
                 {appAcads(viewingApp).length === 0 ? (
                   <p className="text-[11px] text-[#8B7376]">No academic records uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appAcads(viewingApp).map((a) => (
-                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-3 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#6B5458]">{a.applicant_type || "N/A"}</Badge>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{a.applicant_type || "N/A"}</Badge>
                           <span className="font-semibold text-[#241012]">GWA/GPA: {a.shs_gwa ?? a.college_gpa ?? "\u2014"}</span>
                         </div>
                         {a.proof_image_path && fileUrls[a.proof_image_path] ? (
@@ -487,16 +495,16 @@ export default function ApprovalsPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Support Documents ({appDocs(viewingApp).length})</h4>
                 {appDocs(viewingApp).length === 0 ? (
                   <p className="text-[11px] text-[#8B7376]">No documents uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appDocs(viewingApp).map((d) => (
-                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-2 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#6B5458]">{d.document_type}</Badge>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{d.document_type}</Badge>
                           <span className="text-[10px] text-[#8B7376]">{d.file_path.split("/").pop()}</span>
                         </div>
                         {fileUrls[d.file_path] ? (
@@ -511,7 +519,7 @@ export default function ApprovalsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-[#241012]/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[11px] text-[#8B7376]">
                 {viewingAppr.validation_status === "Validated"
                   ? "This scholar was validated against the Registrar database."

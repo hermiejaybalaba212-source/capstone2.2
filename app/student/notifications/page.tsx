@@ -26,6 +26,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [studentId, setStudentId] = useState<number | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     let ignore = false;
@@ -105,7 +107,21 @@ export default function NotificationsPage() {
     setMarkingAll(false);
   }
 
+  async function deleteNotification(id: number) {
+    const sb = getSupabase();
+    const { error } = await sb
+      .from("notifications_announcements")
+      .delete()
+      .eq("notification_id", id);
+    if (error) return;
+    setNotifications((prev) => prev.filter((n) => n.notification_id !== id));
+  }
+
   const unreadCount = notifications.filter((n) => n.status === "Unread").length;
+
+  const totalPages = Math.max(1, Math.ceil(notifications.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = notifications.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (loading) {
     return <Spinner label="Loading notifications..." />;
@@ -115,8 +131,8 @@ export default function NotificationsPage() {
     <div>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
-          <p className="mt-1 text-xs text-gray-500">Messages and status updates from the scholarship office.</p>
+          <h1 className="text-xl font-bold text-[#241012]">Notifications</h1>
+          <p className="mt-1 text-xs text-[#6B5458]">Messages and status updates from the scholarship office.</p>
         </div>
         {unreadCount > 0 && (
           <button
@@ -138,57 +154,88 @@ export default function NotificationsPage() {
           />
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
-          {notifications.map((n) => (
-            <div
-              key={n.notification_id}
-              className={`rounded-xl border p-5 shadow-sm ${
-                n.status === "Unread"
-                  ? "border-[#7B1113]/20 bg-white"
-                  : "border-gray-200 bg-gray-50"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {n.status === "Unread" && (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#7B1113]" />
-                    )}
-                    <p
-                      className={`text-xs ${
-                        n.status === "Unread"
-                          ? "font-bold text-gray-900"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {n.title}
+        <>
+          <div className="mt-4 space-y-3">
+            {pageItems.map((n) => (
+              <div
+                key={n.notification_id}
+                className={`rounded-xl border p-5 shadow-sm ${
+                  n.status === "Unread"
+                    ? "border-[#7B1113]/20 bg-white"
+                    : "border-[#241012]/[0.06] bg-[#FAF7F5]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {n.status === "Unread" && (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#7B1113]" />
+                      )}
+                      <p
+                        className={`text-xs ${
+                          n.status === "Unread"
+                            ? "font-bold text-[#241012]"
+                            : "text-[#6B5458]"
+                        }`}
+                      >
+                        {n.title}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs text-[#6B5458]">{n.message}</p>
+                    <p className="mt-1 text-[11px] text-[#8B7376]">
+                      {formatDateTime(n.date_sent)}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">{n.message}</p>
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    {formatDateTime(n.date_sent)}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {n.notification_type && (
-                    <Badge className={NOTIFICATION_TYPE_STYLES[n.notification_type] || ""}>
-                      {n.notification_type}
+                  <div className="flex shrink-0 items-center gap-2">
+                    {n.notification_type && (
+                      <Badge className={NOTIFICATION_TYPE_STYLES[n.notification_type] || ""}>
+                        {n.notification_type}
+                      </Badge>
+                    )}
+                    <Badge
+                      className={
+                        n.status === "Unread"
+                          ? "border-amber-200 bg-amber-100 text-amber-800"
+                          : "border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]"
+                      }
+                    >
+                      {n.status === "Unread" ? "Unread" : "Read"}
                     </Badge>
-                  )}
-                  <Badge
-                    className={
-                      n.status === "Unread"
-                        ? "border-amber-200 bg-amber-100 text-amber-800"
-                        : "border-gray-200 bg-gray-100 text-gray-600"
-                    }
-                  >
-                    {n.status === "Unread" ? "Unread" : "Read"}
-                  </Badge>
+                    <button
+                      onClick={() => deleteNotification(n.notification_id)}
+                      title="Delete this notification"
+                      className="rounded-lg border border-red-200 px-2 py-1 text-[10px] font-bold text-red-600 transition hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3 text-xs">
+            <p className="text-[#6B5458]">
+              Showing {Math.min(notifications.length, safePage * PAGE_SIZE) - (safePage - 1) * PAGE_SIZE} of {notifications.length} notification(s)
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="rounded-lg border border-[#241012]/[0.06] px-3 py-1.5 font-semibold text-[#241012] hover:bg-[#FAF7F5] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                &larr; Prev
+              </button>
+              <span className="font-semibold text-[#7B1113]">{safePage} / {totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="rounded-lg border border-[#241012]/[0.06] px-3 py-1.5 font-semibold text-[#241012] hover:bg-[#FAF7F5] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next &rarr;
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

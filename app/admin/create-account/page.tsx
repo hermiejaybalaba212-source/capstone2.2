@@ -80,7 +80,7 @@ export default function CreateFacultyAccountPage() {
         </div>
       </div>
 
-      <div className="max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="max-w-lg rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block text-xs font-semibold text-[#241012]">
             Username
@@ -89,7 +89,7 @@ export default function CreateFacultyAccountPage() {
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               required
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+              className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
               placeholder="e.g. jpdelacruz"
             />
           </label>
@@ -101,7 +101,7 @@ export default function CreateFacultyAccountPage() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               required
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+              className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
               placeholder="faculty@spc.edu.ph"
             />
           </label>
@@ -114,7 +114,7 @@ export default function CreateFacultyAccountPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
               minLength={6}
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+              className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
               placeholder="Minimum 6 characters"
             />
           </label>

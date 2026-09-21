@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatDate, validateFile } from "@/lib/utils";
-import { DOC_TYPES } from "@/lib/constants";
+import { DOC_TYPES, DISABILITY_OPTIONS, IP_GROUP_OPTIONS } from "@/lib/constants";
 import { Spinner } from "@/components/ui/spinner";
 
 interface StudentProfile {
@@ -31,6 +31,14 @@ interface ScholarshipProgram {
   status?: string;
 }
 
+function parseRequirements(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split("|")
+    .map((r) => r.trim())
+    .filter(Boolean);
+}
+
 export default function ApplyPage() {
   return (
     <Suspense fallback={<Spinner label="Loading application form..." color="maroon" />}>
@@ -51,6 +59,8 @@ function ApplyPageContent() {
   const [selectedProgramId, setSelectedProgramId] = useState<number | null>(
     programIdParam ? Number(programIdParam) : null
   );
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [alreadyAppliedStatus, setAlreadyAppliedStatus] = useState("");
 
   const [form, setForm] = useState({
     fatherName: "",
@@ -164,6 +174,23 @@ function ApplyPageContent() {
     return () => { ignore = true; };
   }, [router]);
 
+  useEffect(() => {
+    if (!profile || !selectedProgramId) return;
+    let cancelled = false;
+    const sb = getSupabase();
+    sb.from("scholarship_applications")
+      .select("application_status")
+      .eq("student_id", profile.studentId)
+      .eq("scholarship_id", selectedProgramId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAlreadyApplied(!!data);
+        setAlreadyAppliedStatus(data?.application_status ?? "");
+      });
+    return () => { cancelled = true; };
+  }, [profile, selectedProgramId]);
+
   function handleFormChange(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
@@ -237,15 +264,24 @@ function ApplyPageContent() {
       return;
     }
 
-    for (const docType of DOC_TYPES) {
+    const selectedProgram = programs.find((p) => p.scholarship_id === selectedProgramId);
+    const requiredDocs =
+      selectedProgram && parseRequirements(selectedProgram.requirements).length > 0
+        ? parseRequirements(selectedProgram.requirements)
+        : [...DOC_TYPES];
+
+    for (const docType of requiredDocs) {
       const file = docFiles[docType];
-      if (file) {
-        const err = validateFile(file);
-        if (err) {
-          setMessage(`${docType}: ${err}`);
-          setMessageType("error");
-          return;
-        }
+      if (!file) {
+        setMessage(`Please attach the ${docType} document. It is required for this scholarship program.`);
+        setMessageType("error");
+        return;
+      }
+      const err = validateFile(file);
+      if (err) {
+        setMessage(`${docType}: ${err}`);
+        setMessageType("error");
+        return;
       }
     }
 
@@ -370,7 +406,7 @@ function ApplyPageContent() {
         return;
       }
 
-      for (const docType of DOC_TYPES) {
+      for (const docType of requiredDocs) {
         const file = docFiles[docType];
         if (!file) continue;
 
@@ -476,10 +512,16 @@ function ApplyPageContent() {
     );
   }
 
+  const selectedProgramForDocs = programs.find((p) => p.scholarship_id === selectedProgramId);
+  const renderRequiredDocs =
+    selectedProgramForDocs && parseRequirements(selectedProgramForDocs.requirements).length > 0
+      ? parseRequirements(selectedProgramForDocs.requirements)
+      : [...DOC_TYPES];
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Submit Application</h1>
-      <p className="mt-1 text-xs text-gray-500">Fill in the form and upload your requirements to apply for a scholarship.</p>
+      <h1 className="text-xl font-bold text-[#241012]">Submit Application</h1>
+      <p className="mt-1 text-xs text-[#6B5458]">Fill in the form and upload your requirements to apply for a scholarship.</p>
 
       {message && (
         <div
@@ -494,13 +536,13 @@ function ApplyPageContent() {
       )}
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-5">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-700">Scholarship Program</h2>
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">Scholarship Program</h2>
           <select
             value={selectedProgramId || ""}
             onChange={(e) => setSelectedProgramId(Number(e.target.value) || null)}
             required
-            className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+            className="mt-3 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
           >
             <option value="">Choose a program...</option>
             {programs.map((p) => (
@@ -512,62 +554,62 @@ function ApplyPageContent() {
           </select>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-700">CHED Application Form</h2>
-          <p className="mt-1 text-[11px] text-gray-500">All fields marked with * are required.</p>
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">CHED Application Form</h2>
+          <p className="mt-1 text-[11px] text-[#6B5458]">All fields marked with * are required.</p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Father&apos;s Full Name *
               <input
                 value={form.fatherName}
                 onChange={(e) => handleFormChange("fatherName", e.target.value)}
                 placeholder="Juan D. Dela Cruz"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Mother&apos;s Full Name *
               <input
                 value={form.motherName}
                 onChange={(e) => handleFormChange("motherName", e.target.value)}
                 placeholder="Maria D. Dela Cruz"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Street / Barangay *
               <input
                 value={form.streetBarangay}
                 onChange={(e) => handleFormChange("streetBarangay", e.target.value)}
                 placeholder="e.g. Purok 6, Tibanga"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Zipcode *
               <input
                 value={form.zipcode}
                 onChange={(e) => handleFormChange("zipcode", e.target.value)}
                 placeholder="9200"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Contact Number *
               <input
                 value={form.contactNumber}
                 onChange={(e) => handleFormChange("contactNumber", e.target.value)}
                 placeholder="09XXXXXXXXX"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Email Address *
               <input
                 type="email"
@@ -575,28 +617,32 @@ function ApplyPageContent() {
                 onChange={(e) => handleFormChange("email", e.target.value)}
                 placeholder="you@email.com"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Disability (optional)
-              <input
+              <select
                 value={form.disability}
                 onChange={(e) => handleFormChange("disability", e.target.value)}
-                placeholder=""
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
-              />
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+              >
+                <option value="">Select disability (if any)...</option>
+                {DISABILITY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Indigenous People Group (optional)
-              <input
+              <select
                 value={form.ipGroup}
                 onChange={(e) => handleFormChange("ipGroup", e.target.value)}
-                placeholder=""
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
-              />
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+              >
+                <option value="">Select IP group (if any)...</option>
+                {IP_GROUP_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Annual Family Income (PHP) *
               <input
                 type="number"
@@ -606,34 +652,36 @@ function ApplyPageContent() {
                 onChange={(e) => handleFormChange("annualIncome", e.target.value)}
                 placeholder="150000"
                 required
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900 sm:col-span-2">
+            <label className="block text-xs font-semibold text-[#241012] sm:col-span-2">
               Income Tax Return (ITR) File * — JPG / PNG / PDF, max 10 MB
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp,.pdf"
                 onChange={(e) => setItrFile(e.target.files?.[0] || null)}
                 required
-                className="mt-1 w-full rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#7B1113] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                className="mt-1 w-full rounded-lg border border-dashed border-[#241012]/15 bg-[#FAF7F5] px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#7B1113] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
               />
             </label>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-700">Supporting Documents</h2>
-          <p className="mt-1 text-[11px] text-gray-500">
-            Upload clear scans of each requirement (JPG, PNG, or PDF, max 10 MB).
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">Supporting Documents</h2>
+          <p className="mt-1 text-[11px] text-[#6B5458]">
+            {renderRequiredDocs.length > 0
+              ? <>Upload clear scans of each required document below (JPG, PNG, or PDF, max 10 MB). Only the requirements checked by the <span className="font-semibold text-[#7B1113]">{selectedProgramForDocs?.scholarship_name || "selected program"}</span> are shown.</>
+              : "Upload clear scans of each requirement (JPG, PNG, or PDF, max 10 MB)."}
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {DOC_TYPES.map((docType) => (
+            {renderRequiredDocs.map((docType) => (
               <div
                 key={docType}
-                className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-center"
+                className="rounded-xl border border-dashed border-[#241012]/15 bg-[#FAF7F5] p-4 text-center"
               >
-                <p className="text-xs font-bold text-gray-900">{docType}</p>
+                <p className="text-xs font-bold text-[#241012]">{docType}</p>
                 <label className="mt-3 block cursor-pointer rounded-lg bg-[#7B1113] px-3 py-2 text-xs font-bold text-white hover:bg-[#540111]">
                   {docFiles[docType] ? "Change File" : "Choose File"}
                   <input
@@ -653,17 +701,17 @@ function ApplyPageContent() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-700">Academic Records</h2>
-          <p className="mt-1 text-[11px] text-gray-500">All fields are required to compute your GWA for ranking.</p>
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">Academic Records</h2>
+          <p className="mt-1 text-[11px] text-[#6B5458]">Academic records are kept on file for verification purposes.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Applicant Type *
               <select
                 value={acadApplicantType}
                 onChange={(e) => setAcadApplicantType(e.target.value)}
                 disabled={acadTypeLocked}
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:cursor-not-allowed disabled:bg-[#F3EEEB] disabled:text-[#6B5458]"
               >
                 <option value="">Select...</option>
                 <option value="Freshman">Freshman</option>
@@ -673,7 +721,7 @@ function ApplyPageContent() {
                 <span className="mt-0.5 block text-[10px] text-[#7B1113]">Auto-set from your registration.</span>
               )}
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               {acadApplicantType === "Alumni" ? "College GPA *" : "SHS GWA *"} (1–100)
               <input
                 type="number"
@@ -683,16 +731,16 @@ function ApplyPageContent() {
                 value={acadScore}
                 onChange={(e) => setAcadScore(e.target.value)}
                 placeholder="e.g. 95"
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
             </label>
-            <label className="block text-xs font-semibold text-gray-900">
+            <label className="block text-xs font-semibold text-[#241012]">
               Proof File *
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp,.pdf"
                 onChange={(e) => setAcadProofFile(e.target.files?.[0] || null)}
-                className="mt-1 w-full rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#7B1113] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                className="mt-1 w-full rounded-lg border border-dashed border-[#241012]/15 bg-[#FAF7F5] px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#7B1113] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
               />
             </label>
           </div>

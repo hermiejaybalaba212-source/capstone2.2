@@ -119,20 +119,20 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total Students" value={totalStudents} />
-        <StatCard label="Pending Applications" value={pendingApps} tone="blue" />
-        <StatCard label="Approved Scholars" value={approvedScholars} tone="green" />
-        <StatCard label="Active Alerts" value={activeAlerts} tone="red" />
+        <StatCard label="Pending Applications" value={pendingApps} tone="maroon" />
+        <StatCard label="Approved Scholars" value={approvedScholars} tone="maroon" />
+        <StatCard label="Active Alerts" value={activeAlerts} tone="maroon" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-bold text-[#241012]">Recent Applications</h2>
           {recentApplications.length === 0 ? (
             <EmptyState icon="&#128196;" title="No recent applications" />
           ) : (
             <ul className="space-y-3">
               {recentApplications.map((app) => (
-                <li key={app.application_id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 p-3">
+                <li key={app.application_id} className="flex items-center justify-between rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-[#241012]">
                       {app.student_accounts?.last_name}, {app.student_accounts?.given_name}
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-bold text-[#241012]">Active Alerts</h2>
           {recentAlerts.length === 0 ? (
             <EmptyState icon="&#9989;" title="No active alerts" />
@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold text-[#241012]">Notices &amp; Status Updates</h2>
           <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#7B1113]">{recentNotices.length}</span>
@@ -192,7 +192,7 @@ export default function AdminDashboardPage() {
         ) : (
           <ul className="mt-4 space-y-3">
             {recentNotices.map((n) => (
-              <li key={n.notification_id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
+              <li key={n.notification_id} className="flex items-start justify-between gap-3 rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3.5">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs font-bold text-[#241012]">{n.title}</p>

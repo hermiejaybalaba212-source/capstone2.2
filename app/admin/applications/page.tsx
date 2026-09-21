@@ -37,6 +37,7 @@ interface ScholarshipApplication {
 interface SupportDocument {
   document_id: number;
   student_id: number;
+  application_id?: number;
   document_type: string;
   file_path: string;
   upload_date: string;
@@ -77,6 +78,11 @@ interface ChedFormInput {
 }
 
 const NO_VALUE = "";
+
+function fill(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "N/A";
+  return String(value);
+}
 
 export default function ApplicationsPage() {
   const router = useRouter();
@@ -133,7 +139,7 @@ export default function ApplicationsPage() {
   }, [viewingId]);
 
   const appChed = (app: ScholarshipApplication) => chedForms.filter((c) => c.application_id === app.application_id);
-  const appDocs = (app: ScholarshipApplication) => docs.filter((d) => d.student_id === app.student_id);
+  const appDocs = (app: ScholarshipApplication) => docs.filter((d) => d.application_id === app.application_id || d.student_id === app.student_id);
   const appAcads = (app: ScholarshipApplication) => acads.filter((a) => a.student_id === app.student_id);
 
   const filteredApps = applications
@@ -359,42 +365,52 @@ export default function ApplicationsPage() {
   function buildCsvRows(apps: ScholarshipApplication[]) {
     const chedByApp = Object.fromEntries(chedForms.map((c) => [c.application_id, c]));
     const acadByStudent = Object.fromEntries(acads.map((a) => [a.student_id, a]));
-    const docByStudent: Record<number, string> = {};
-    docs.forEach((d) => { docByStudent[d.student_id] = `${docByStudent[d.student_id] || ""}${docByStudent[d.student_id] ? "; " : ""}${d.document_type}`; });
+    const docByApp: Record<number, string> = {};
+    const docFilesByApp: Record<number, string> = {};
+    docs.forEach((d) => {
+      const key = d.application_id ?? d.student_id;
+      if (!key) return;
+      docByApp[key] = docByApp[key] ? `${docByApp[key]}; ${d.document_type}` : d.document_type;
+      docFilesByApp[key] = docFilesByApp[key] ? `${docFilesByApp[key]}; ${d.file_path}` : d.file_path;
+    });
 
     return apps.map((a) => {
       const c = chedByApp[a.application_id];
       const acad = acadByStudent[a.student_id];
       return {
         "Application ID": a.application_id,
-        "Student No.": a.student_accounts?.student_number || c?.student_id || NO_VALUE,
-        "Last Name": c?.last_name || a.student_accounts?.last_name || NO_VALUE,
-        "First Name": c?.given_name || a.student_accounts?.given_name || NO_VALUE,
-        "Middle Name": c?.middle_name || NO_VALUE,
-        "Ext. Name": c?.ext_name || NO_VALUE,
-        "Sex": c?.sex || a.student_accounts?.sex || NO_VALUE,
-        "Birthdate": c?.birthdate || NO_VALUE,
-        "Program": c?.complete_program_name || a.student_accounts?.program_name || NO_VALUE,
-        "Year Level": c?.year_level || a.student_accounts?.year_level || NO_VALUE,
-        "Scholarship Program": a.scholarship_programs?.scholarship_name || NO_VALUE,
+        "Student No.": fill(a.student_accounts?.student_number || c?.student_id || NO_VALUE),
+        "Last Name": fill(c?.last_name || a.student_accounts?.last_name || NO_VALUE),
+        "First Name": fill(c?.given_name || a.student_accounts?.given_name || NO_VALUE),
+        "Middle Name": fill(c?.middle_name || NO_VALUE),
+        "Ext. Name": fill(c?.ext_name || NO_VALUE),
+        "Sex": fill(c?.sex || a.student_accounts?.sex || NO_VALUE),
+        "Birthdate": fill(c?.birthdate || NO_VALUE),
+        "Program": fill(c?.complete_program_name || a.student_accounts?.program_name || NO_VALUE),
+        "Year Level": fill(c?.year_level || a.student_accounts?.year_level || NO_VALUE),
+        "Scholarship Program": fill(a.scholarship_programs?.scholarship_name || NO_VALUE),
         "Application Status": a.application_status,
         "Application Date": formatDateTime(a.application_date),
-        "Father's Full Name": c?.father_name || NO_VALUE,
-        "Mother's Full Name": c?.mother_name || NO_VALUE,
-        "Street / Barangay": c?.street_barangay || NO_VALUE,
-        "Zipcode": c?.zipcode || NO_VALUE,
-        "Contact Number": c?.contact_number || NO_VALUE,
-        "Email Address": c?.email_address || NO_VALUE,
-        "Disability": c?.disability || NO_VALUE,
-        "Indigenous People Group": c?.indigenous_people_group || NO_VALUE,
-        "Annual Family Income (PHP)": c?.annual_income_family != null ? Number(c.annual_income_family) : NO_VALUE,
-        "ITR File": c?.income_tax_return || NO_VALUE,
-        "Registration Status": a.student_accounts?.registration_status || NO_VALUE,
-        "Account Status": a.student_accounts?.account_status || NO_VALUE,
-        "Supporting Documents": docByStudent[a.student_id] || NO_VALUE,
-        "Applicant Type": acad?.applicant_type || NO_VALUE,
-        "GWA/GPA Score": acad?.shs_gwa ?? acad?.college_gpa ?? NO_VALUE,
-        "Remarks": a.remarks || NO_VALUE,
+        "Father's Full Name": fill(c?.father_name || NO_VALUE),
+        "Mother's Full Name": fill(c?.mother_name || NO_VALUE),
+        "Street / Barangay": fill(c?.street_barangay || NO_VALUE),
+        "Zipcode": fill(c?.zipcode || NO_VALUE),
+        "Contact Number": fill(c?.contact_number || NO_VALUE),
+        "Email Address": fill(c?.email_address || NO_VALUE),
+        "Disability": fill(c?.disability || NO_VALUE),
+        "Indigenous People Group": fill(c?.indigenous_people_group || NO_VALUE),
+        "Annual Family Income (PHP)": c?.annual_income_family != null ? Number(c.annual_income_family) : 0,
+        "ITR File Present": c?.income_tax_return ? "Yes" : "No",
+        "ITR File Path": fill(c?.income_tax_return || NO_VALUE),
+        "Registration Status": fill(a.student_accounts?.registration_status || NO_VALUE),
+        "Account Status": fill(a.student_accounts?.account_status || NO_VALUE),
+        "Supporting Documents": fill(docByApp[a.application_id] || NO_VALUE),
+        "Supporting Doc Files": fill(docFilesByApp[a.application_id] || NO_VALUE),
+        "Applicant Type": fill(acad?.applicant_type || NO_VALUE),
+        "SHS GWA": acad?.shs_gwa != null ? Number(acad.shs_gwa) : acad?.college_gpa != null ? Number(acad.college_gpa) : "N/A",
+        "College GPA": acad?.college_gpa != null ? Number(acad.college_gpa) : acad?.shs_gwa != null ? Number(acad.shs_gwa) : "N/A",
+        "Academic Proof File": fill(acad?.proof_image_path || NO_VALUE),
+        "Remarks": fill(a.remarks || NO_VALUE),
       };
     });
   }
@@ -447,7 +463,7 @@ export default function ApplicationsPage() {
           placeholder="Search by name, student #, program, year, sex, scholarship..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]/20"
+          className="w-full rounded-xl border border-[#241012]/[0.06] bg-white py-2.5 pl-10 pr-4 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]/20"
         />
       </div>
 
@@ -458,7 +474,7 @@ export default function ApplicationsPage() {
             <button
               key={tab.key || "all"}
               onClick={() => setStatusFilter(tab.key)}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${statusFilter === tab.key ? tab.active : `${tab.idle} border border-transparent`} ${statusFilter === tab.key ? "" : "border border-gray-200"}`}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${statusFilter === tab.key ? tab.active : `${tab.idle} border border-transparent`} ${statusFilter === tab.key ? "" : "border border-[#241012]/[0.06]"}`}
             >
               {tab.label} ({count})
             </button>
@@ -470,7 +486,7 @@ export default function ApplicationsPage() {
         <EmptyState icon="&#128196;" title="No applications found" hint="Applications will appear here once students submit them." />
       ) : (
         <div className="space-y-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#241012]">
                 <input
@@ -512,7 +528,7 @@ export default function ApplicationsPage() {
                 value={batchMsg}
                 onChange={(e) => setBatchMsg(e.target.value)}
                 placeholder="Notification message for selected students..."
-                className="min-w-40 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="min-w-40 flex-1 rounded-lg border border-[#241012]/[0.06] px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
               <button
                 onClick={batchNotify}
@@ -527,7 +543,7 @@ export default function ApplicationsPage() {
           {filteredApps.map((app) => {
             const currentStatus = app.application_status;
             return (
-              <div key={app.application_id} className={`rounded-xl border bg-white p-4 shadow-sm transition ${selectedIds.has(app.application_id) ? "border-[#7B1113] ring-1 ring-[#7B1113]/20" : "border-gray-200"}`}>
+              <div key={app.application_id} className={`rounded-xl border bg-white p-4 shadow-sm transition ${selectedIds.has(app.application_id) ? "border-[#7B1113] ring-1 ring-[#7B1113]/20" : "border-[#241012]/[0.06]"}`}>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <input
@@ -567,14 +583,14 @@ export default function ApplicationsPage() {
                     ))}
                     <button
                       onClick={() => openDetails(app.application_id)}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-[11px] font-bold text-[#241012] transition hover:bg-gray-50"
+                      className="rounded-lg border border-[#241012]/15 px-3 py-1.5 text-[11px] font-bold text-[#241012] transition hover:bg-[#FAF7F5]"
                     >
                       View Details
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-gray-100 bg-gray-50/60 p-2.5 sm:flex-row sm:items-center">
+                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-2.5 sm:flex-row sm:items-center">
                   <button
                     onClick={() => handleNotify(app)}
                     className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5"
@@ -586,7 +602,7 @@ export default function ApplicationsPage() {
                     onChange={(e) => setNotifyDraft((prev) => ({ ...prev, [app.application_id]: e.target.value }))}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNotify(app); } }}
                     placeholder="Send this student a message..."
-                    className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs outline-none focus:border-[#7B1113]"
+                    className="flex-1 rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-1.5 text-xs outline-none focus:border-[#7B1113]"
                   />
                   <button
                     onClick={() => openDetails(app.application_id)}
@@ -604,14 +620,14 @@ export default function ApplicationsPage() {
       {viewingApp && (
         <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[#241012]/50 p-4 backdrop-blur-sm sm:p-8" onClick={() => setViewingId(null)}>
           <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
+            <div className="flex items-start justify-between gap-4 border-b border-[#241012]/[0.06] p-5">
               <div className="min-w-0">
                 <h3 className="text-lg font-bold text-[#241012]">Application Details</h3>
                 <p className="mt-0.5 text-xs text-[#8B7376]">
                   {viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name} &middot; {viewingApp.student_accounts?.student_number || "\u2014"}
                 </p>
               </div>
-              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#8B7376] transition hover:bg-gray-100 hover:text-[#241012]" aria-label="Close">
+              <button onClick={() => setViewingId(null)} className="rounded-lg p-2 text-[#8B7376] transition hover:bg-[#F3EEEB] hover:text-[#241012]" aria-label="Close">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -619,13 +635,13 @@ export default function ApplicationsPage() {
             <div className="max-h-[calc(100vh-12rem)] space-y-6 overflow-y-auto p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={STATUS_STYLES[viewingApp.application_status] || ""}>{viewingApp.application_status}</Badge>
-                <Badge className="border-gray-200 bg-gray-100 text-[#6B5458]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
+                <Badge className="border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]">{viewingApp.scholarship_programs?.scholarship_name || "\u2014"}</Badge>
                 <button onClick={() => exportOneCsv(viewingApp)} className="rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5">
                   &#11015; Export full form CSV
                 </button>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Applicant Profile</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Full Name</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.last_name}, {viewingApp.student_accounts?.given_name}</p></div>
@@ -634,13 +650,13 @@ export default function ApplicationsPage() {
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Year Level</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.year_level || "\u2014"}</p></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Sex</p><p className="mt-0.5 font-semibold text-[#241012]">{viewingApp.student_accounts?.sex || "\u2014"}</p></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Registration</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.registration_status === "Verified" ? "border-green-200 bg-green-50 text-green-700" : "border-amber-200 bg-amber-50 text-amber-700"}>{viewingApp.student_accounts?.registration_status || "\u2014"}</Badge></div></div>
-                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-100 text-gray-600"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
+                  <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Account Status</p><div className="mt-0.5"><Badge className={viewingApp.student_accounts?.account_status === "Active" ? "border-green-200 bg-green-50 text-green-700" : "border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]"}>{viewingApp.student_accounts?.account_status || "\u2014"}</Badge></div></div>
                   <div className="rounded-lg bg-white p-2.5 shadow-sm"><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Submitted</p><p className="mt-0.5 font-semibold text-[#241012]">{formatDateTime(viewingApp.application_date)}</p></div>
                 </div>
               </div>
 
               {appChed(viewingApp).length > 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                   <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form Submitted</h4>
                   {appChed(viewingApp).map((c) => (
                     <div key={c.ched_form_id} className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-4">
@@ -663,32 +679,40 @@ export default function ApplicationsPage() {
                       <div><p className="text-[10px] uppercase tracking-wide text-[#8B7376]">Annual Family Income</p><p className="mt-0.5 font-semibold text-[#241012]">&#8369;{Number(c.annual_income_family || 0).toLocaleString()}/yr</p></div>
                       <div>
                         <p className="text-[10px] uppercase tracking-wide text-[#8B7376]">ITR File</p>
-                        {c.income_tax_return && fileUrls[c.income_tax_return] ? (
-                          <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-0.5 inline-block font-semibold text-[#7B1113] hover:underline">View ITR</a>
-                        ) : c.income_tax_return ? (
-                          <p className="mt-0.5 text-[10px] font-semibold text-[#8B7376]">uploaded</p>
+                        {c.income_tax_return ? (
+                          fileUrls[c.income_tax_return] ? (
+                            <a href={fileUrls[c.income_tax_return]} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-[#7B1113] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#540111]" title="Open the submitted Income Tax Return in a new tab">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5h18M3 6h18M12 6v18M10.5 3h3M4.5 21h15a1.5 1.5 0 001.5-1.5V7.5A1.5 1.5 0 0019.5 6h-15A1.5 1.5 0 003 7.5v12A1.5 1.5 0 004.5 21z" /></svg>
+                              View ITR
+                            </a>
+                          ) : (
+                            <button type="button" disabled className="mt-1 inline-flex cursor-default items-center gap-1.5 rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-semibold text-[#8B7376]" title="Opening...">
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#7B1113]/30 border-t-[#7B1113]" />
+                              Opening ITR...
+                            </button>
+                          )
                         ) : <p className="mt-0.5 font-semibold text-[#241012]">{"\u2014"}</p>}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                   <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Application Form</h4>
                   <p className="mt-2 text-[11px] text-[#8B7376]">The student has not completed the CHED application form yet.</p>
                 </div>
               )}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Academic Records ({appAcads(viewingApp).length})</h4>
                 {appAcads(viewingApp).length === 0 ? (
                   <p className="text-[11px] text-[#8B7376]">No academic records uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appAcads(viewingApp).map((a) => (
-                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={a.record_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-3 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#6B5458]">{a.applicant_type || "N/A"}</Badge>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{a.applicant_type || "N/A"}</Badge>
                           <span className="font-semibold text-[#241012]">GWA/GPA: {a.shs_gwa ?? a.college_gpa ?? "\u2014"}</span>
                         </div>
                         {a.proof_image_path && fileUrls[a.proof_image_path] ? (
@@ -702,16 +726,16 @@ export default function ApplicationsPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-4">
                 <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Support Documents ({appDocs(viewingApp).length})</h4>
                 {appDocs(viewingApp).length === 0 ? (
                   <p className="text-[11px] text-[#8B7376]">No documents uploaded.</p>
                 ) : (
                   <ul className="space-y-2">
                     {appDocs(viewingApp).map((d) => (
-                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                      <li key={d.document_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5]/60 px-3 py-2">
                         <div className="flex items-center gap-2 text-xs">
-                          <Badge className="border-gray-200 bg-white text-[#6B5458]">{d.document_type}</Badge>
+                          <Badge className="border-[#241012]/[0.06] bg-white text-[#6B5458]">{d.document_type}</Badge>
                           <span className="text-[10px] text-[#8B7376]">{d.file_path.split("/").pop()}</span>
                         </div>
                         {fileUrls[d.file_path] ? (
@@ -726,7 +750,7 @@ export default function ApplicationsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 p-5">
+            <div className="flex flex-col gap-3 border-t border-[#241012]/[0.06] p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#8B7376]">Update Status</h4>
@@ -758,7 +782,7 @@ export default function ApplicationsPage() {
                 value={(statusDraft[viewingApp.application_id] && statusDraft[viewingApp.application_id].remarks) ?? viewingApp.remarks ?? ""}
                 onChange={(e) => setStatusDraft((prev) => ({ ...prev, [viewingApp.application_id]: { status: prev[viewingApp.application_id]?.status ?? viewingApp.application_status, remarks: e.target.value } }))}
                 placeholder="Remarks (sent to the student)..."
-                className="rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
+                className="rounded-lg border border-[#241012]/[0.06] px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
               <button
                 onClick={() => handleStatusSave(viewingApp)}

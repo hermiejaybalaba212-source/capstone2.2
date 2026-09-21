@@ -39,6 +39,8 @@ export default function NotificationsPage() {
   const [recipientMode, setRecipientMode] = useState<"all" | "student">("all");
   const [form, setForm] = useState({ student_id: "", title: "", message: "", notification_type: "Announcement" });
   const [sending, setSending] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
 
   useEffect(() => {
     let ignore = false;
@@ -137,6 +139,25 @@ export default function NotificationsPage() {
     setMessage({ type: "ok", text: `Exported ${notifications.length} notification(s) as CSV.` });
   }
 
+  async function deleteNotification(id: number) {
+    setMessage(null);
+    const sb = getSupabase();
+    const { error } = await sb
+      .from("notifications_announcements")
+      .delete()
+      .eq("notification_id", id);
+    if (error) {
+      setMessage({ type: "err", text: error.message });
+      return;
+    }
+    setNotifications((prev) => prev.filter((n) => n.notification_id !== id));
+    setMessage({ type: "ok", text: "Notification deleted." });
+  }
+
+  const totalPages = Math.max(1, Math.ceil(notifications.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = notifications.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   if (loading) return <Spinner label="Loading notifications..." color="maroon" />;
 
   return (
@@ -162,7 +183,7 @@ export default function NotificationsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
           <h2 className="text-sm font-bold text-[#241012]">Send a Notification</h2>
           <p className="mt-1 text-xs text-[#8B7376]">Notify all students at once, or choose one student.</p>
 
@@ -170,14 +191,14 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => setRecipientMode("all")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${recipientMode === "all" ? "bg-[#7B1113] text-white" : "border border-gray-200 text-[#6B5458] hover:bg-[#7B1113]/5"}`}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${recipientMode === "all" ? "bg-[#7B1113] text-white" : "border border-[#241012]/[0.06] text-[#6B5458] hover:bg-[#7B1113]/5"}`}
             >
               All students ({students.length})
             </button>
             <button
               type="button"
               onClick={() => setRecipientMode("student")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${recipientMode === "student" ? "bg-[#7B1113] text-white" : "border border-gray-200 text-[#6B5458] hover:bg-[#7B1113]/5"}`}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${recipientMode === "student" ? "bg-[#7B1113] text-white" : "border border-[#241012]/[0.06] text-[#6B5458] hover:bg-[#7B1113]/5"}`}
             >
               A specific student
             </button>
@@ -248,7 +269,7 @@ export default function NotificationsPage() {
           </form>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[#241012]">Sent Notifications</h2>
             <span className="rounded-full bg-[#7B1113]/10 px-2.5 py-1 text-[10px] font-bold text-[#7B1113]">{notifications.length}</span>
@@ -259,27 +280,57 @@ export default function NotificationsPage() {
               <EmptyState icon="&#128276;" title="No notifications sent yet" hint="Your sent notifications will appear here." />
             </div>
           ) : (
-            <ul className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
-              {notifications.map((n) => (
-                <li key={n.notification_id} className="rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-xs font-bold text-[#241012]">{n.title}</p>
-                        <Badge className={NOTIFICATION_TYPE_STYLES[n.notification_type] || ""}>
-                          {n.notification_type}
-                        </Badge>
+            <>
+              <ul className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+                {pageItems.map((n) => (
+                  <li key={n.notification_id} className="rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/50 p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs font-bold text-[#241012]">{n.title}</p>
+                          <Badge className={NOTIFICATION_TYPE_STYLES[n.notification_type] || ""}>
+                            {n.notification_type}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-[11px] text-[#6B5458]">
+                          To: {n.student_accounts ? `${n.student_accounts.last_name}, ${n.student_accounts.given_name}` : "All students"}
+                        </p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-[#8B7376]">{n.message}</p>
                       </div>
-                      <p className="mt-1 text-[11px] text-[#6B5458]">
-                        To: {n.student_accounts ? `${n.student_accounts.last_name}, ${n.student_accounts.given_name}` : "All students"}
-                      </p>
-                      <p className="mt-1 text-[11px] leading-relaxed text-[#8B7376]">{n.message}</p>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <span className="text-[10px] text-[#8B7376]">{formatDateTime(n.date_sent)}</span>
+                        <button
+                          onClick={() => deleteNotification(n.notification_id)}
+                          className="rounded-lg border border-red-200 px-2 py-1 text-[10px] font-bold text-red-600 transition hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                    <span className="shrink-0 text-[10px] text-[#8B7376]">{formatDateTime(n.date_sent)}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#241012]/[0.06] pt-3 text-[11px]">
+                <p className="text-[#8B7376]">Showing {pageItems.length} of {notifications.length}</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage <= 1}
+                    className="rounded-lg border border-[#241012]/[0.06] px-2.5 py-1 font-semibold text-[#6B5458] hover:bg-[#FAF7F5] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    &larr; Prev
+                  </button>
+                  <span className="font-semibold text-[#7B1113]">{safePage} / {totalPages}</span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage >= totalPages}
+                    className="rounded-lg border border-[#241012]/[0.06] px-2.5 py-1 font-semibold text-[#6B5458] hover:bg-[#FAF7F5] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

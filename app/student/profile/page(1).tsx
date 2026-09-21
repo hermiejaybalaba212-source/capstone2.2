@@ -335,7 +335,7 @@ export default function StudentProfilePage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Profile & Documents</h1>
+      <h1 className="text-xl font-bold text-[#241012]">Profile & Documents</h1>
 
       {profileMsg && (
         <div
@@ -416,7 +416,7 @@ export default function StudentProfilePage() {
                   onChange={(e) => setEditForm({ ...editForm, middle_name: e.target.value })}
                   disabled={!editing || savingProfile}
                   placeholder="Optional"
-                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-gray-50 disabled:text-gray-500"
+                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-[#FAF7F5] disabled:text-[#6B5458]"
                 />
               </label>
               <label className="block">
@@ -426,7 +426,7 @@ export default function StudentProfilePage() {
                   onChange={(e) => setEditForm({ ...editForm, ext_name: e.target.value })}
                   disabled={!editing || savingProfile}
                   placeholder="Jr., III…"
-                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-gray-50 disabled:text-gray-500"
+                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-[#FAF7F5] disabled:text-[#6B5458]"
                 />
               </label>
               <label className="block">
@@ -438,7 +438,7 @@ export default function StudentProfilePage() {
                   max={new Date().toISOString().split("T")[0]}
                   min="1920-01-01"
                   disabled={!editing || savingProfile}
-                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-gray-50 disabled:text-gray-500"
+                  className="w-full rounded-lg border border-[#7B1113]/25 px-3 py-2 text-xs outline-none focus:border-[#7B1113] disabled:bg-[#FAF7F5] disabled:text-[#6B5458]"
                 />
               </label>
             </div>
@@ -462,7 +462,7 @@ export default function StudentProfilePage() {
                     });
                   }}
                   disabled={savingProfile}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                  className="rounded-lg border border-[#241012]/15 px-4 py-2 text-xs font-bold text-[#6B5458] hover:bg-[#FAF7F5] disabled:opacity-60"
                 >
                   Cancel
                 </button>

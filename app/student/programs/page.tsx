@@ -17,10 +17,24 @@ interface ScholarshipProgram {
   status?: string;
 }
 
+interface StudentApplication {
+  scholarship_id: number;
+  application_status: string;
+}
+
+function parseRequirements(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split("|")
+    .map((r) => r.trim())
+    .filter(Boolean);
+}
+
 export default function BrowseProgramsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [programs, setPrograms] = useState<ScholarshipProgram[]>([]);
+  const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [hasApprovedApplication, setHasApprovedApplication] = useState(false);
 
   useEffect(() => {
@@ -42,6 +56,11 @@ export default function BrowseProgramsPage() {
           if (studentQ.data) {
             const approvedQ = await sb.from("scholarship_applications").select("application_id").eq("student_id", studentQ.data.student_id).eq("application_status", "Approved").maybeSingle();
             if (approvedQ.data) setHasApprovedApplication(true);
+            const appsQ = await sb
+              .from("scholarship_applications")
+              .select("scholarship_id, application_status")
+              .eq("student_id", studentQ.data.student_id);
+            if (!appsQ.error) setApplications(appsQ.data || []);
           }
         }
       }
@@ -68,8 +87,8 @@ export default function BrowseProgramsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Browse Available Programs</h1>
-      <p className="mt-1 text-xs text-gray-500">Check the open scholarships below and apply to the one that fits you.</p>
+      <h1 className="text-xl font-bold text-[#241012]">Browse Available Programs</h1>
+      <p className="mt-1 text-xs text-[#6B5458]">Check the open scholarships below and apply to the one that fits you.</p>
 
       {hasApprovedApplication && (
         <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 shadow-sm">
@@ -87,44 +106,66 @@ export default function BrowseProgramsPage() {
         </div>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {programs.map((program) => (
-            <article
-              key={program.scholarship_id}
-              className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <h3 className="text-sm font-bold text-[#7B1113]">
-                {program.scholarship_name}
-              </h3>
-              <p className="mt-2 line-clamp-3 flex-1 text-xs leading-relaxed text-gray-600">
-                {program.description || "No description provided."}
-              </p>
-              {program.requirements && (
-                <p className="mt-2 text-[11px] text-gray-500">
-                  <span className="font-semibold">Requirements:</span>{" "}
-                  {program.requirements}
-                </p>
-              )}
-              <div className="mt-3 space-y-1 text-[11px] text-gray-500">
-                <p>
-                  Deadline:{" "}
-                  <span className="font-semibold text-gray-900">
-                    {formatDate(program.deadline)}
-                  </span>
-                </p>
-              </div>
-              <Link
-                href={`/student/apply?programId=${program.scholarship_id}`}
-                className={`mt-4 inline-block rounded-lg px-4 py-2.5 text-center text-xs font-bold text-white ${
-                  hasApprovedApplication
-                    ? "cursor-not-allowed bg-gray-400"
-                    : "bg-[#7B1113] hover:bg-[#540111]"
-                }`}
-                onClick={hasApprovedApplication ? (e) => e.preventDefault() : undefined}
+          {programs.map((program) => {
+            const applied = applications.find((a) => a.scholarship_id === program.scholarship_id);
+            const isLocked = hasApprovedApplication || !!applied;
+            return (
+              <article
+                key={program.scholarship_id}
+                className="flex flex-col rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                {hasApprovedApplication ? "Applications Closed" : "Apply Now"}
-              </Link>
-            </article>
-          ))}
+                <h3 className="text-sm font-bold text-[#7B1113]">
+                  {program.scholarship_name}
+                </h3>
+                <p className="mt-2 line-clamp-3 flex-1 text-xs leading-relaxed text-[#6B5458]">
+                  {program.description || "No description provided."}
+                </p>
+                {applied && (
+                  <p className="mt-2 inline-flex self-start items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[10px] font-bold text-green-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                    Already applied for this scholarship
+                  </p>
+                )}
+                {program.requirements && parseRequirements(program.requirements).length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-[11px] font-semibold text-[#241012]">Requirements:</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {parseRequirements(program.requirements).map((r) => (
+                        <span key={r} className="rounded-full bg-[#7B1113]/5 px-2 py-0.5 text-[10px] font-semibold text-[#7B1113]">{r}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 space-y-1 text-[11px] text-[#6B5458]">
+                  <p>
+                    Deadline:{" "}
+                    <span className="font-semibold text-[#241012]">
+                      {formatDate(program.deadline)}
+                    </span>
+                  </p>
+                  {applied && (
+                    <p>
+                      Application status:{" "}
+                      <span className="font-semibold text-[#7B1113]">
+                        {applied.application_status}
+                      </span>
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/student/apply?programId=${program.scholarship_id}`}
+                  className={`mt-4 inline-block rounded-lg px-4 py-2.5 text-center text-xs font-bold text-white ${
+                    isLocked
+                      ? "cursor-not-allowed bg-gray-400"
+                      : "bg-[#7B1113] hover:bg-[#540111]"
+                  }`}
+                  onClick={isLocked ? (e) => e.preventDefault() : undefined}
+                >
+                  {applied ? "Already Applied" : hasApprovedApplication ? "Applications Closed" : "Apply Now"}
+                </Link>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

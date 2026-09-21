@@ -31,7 +31,7 @@ function ApprovalBadge({ appId, approvals }: { appId: number; approvals: Approva
   const approval = approvals.find((a) => a.application_id === appId);
   if (!approval) return null;
   return (
-    <Badge className={approval.approval_status === "Approved" ? "border-blue-200 bg-blue-50 text-blue-700" : "border-red-200 bg-red-50 text-red-700"}>
+    <Badge className={approval.approval_status === "Approved" ? "border-blue-200 bg-[#7B1113]/[0.06] text-[#7B1113]" : "border-red-200 bg-red-50 text-red-700"}>
       CHED: {approval.approval_status}
     </Badge>
   );
@@ -133,8 +133,8 @@ export default function ApplicationStatusPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Application Status</h1>
-      <p className="mt-1 text-xs text-gray-500">See where each of your applications is in the scholarship process.</p>
+      <h1 className="text-xl font-bold text-[#241012]">Application Status</h1>
+      <p className="mt-1 text-xs text-[#6B5458]">See where each of your applications is in the scholarship process.</p>
 
       {applications.length === 0 ? (
         <div className="mt-4">
@@ -149,10 +149,10 @@ export default function ApplicationStatusPage() {
           {applications.map((app) => (
             <div
               key={app.application_id}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-sm font-bold text-gray-900">
+                <h3 className="text-sm font-bold text-[#241012]">
                   {app.scholarship_programs?.scholarship_name || "Scholarship Program"}
                 </h3>
                 <div className="flex flex-wrap items-center gap-2">
@@ -163,28 +163,28 @@ export default function ApplicationStatusPage() {
                 </div>
               </div>
 
-              <p className="mt-2 text-[11px] text-gray-500">
+              <p className="mt-2 text-[11px] text-[#6B5458]">
                 Applied: {formatDateTime(app.application_date)}
               </p>
 
               {app.remarks && (
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-[#6B5458]">
                   <span className="font-semibold">Remarks:</span> {app.remarks}
                 </p>
               )}
 
               <div className="mt-4">
-                <div className="mb-1 flex items-center justify-between text-[10px] text-gray-500">
+                <div className="mb-1 flex items-center justify-between text-[10px] text-[#6B5458]">
                   <span>Pending</span>
                   <span>Approved</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[#F3EEEB]">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${getProgressColor(app.application_status)}`}
                     style={{ width: `${getProgressWidth(app.application_status)}%` }}
                   />
                 </div>
-                <div className="mt-2 flex items-center gap-4 text-[10px] text-gray-500">
+                <div className="mt-2 flex items-center gap-4 text-[10px] text-[#6B5458]">
                   {STATUS_STEPS.map((step, idx) => {
                     const currentIdx = STATUS_STEPS.indexOf(app.application_status);
                     const isActive = step === app.application_status;
@@ -201,7 +201,7 @@ export default function ApplicationStatusPage() {
                                 : "bg-gray-300"
                           }`}
                         />
-                        <span className={isActive ? "font-semibold text-gray-900" : ""}>
+                        <span className={isActive ? "font-semibold text-[#241012]" : ""}>
                           {step}
                         </span>
                       </div>

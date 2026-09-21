@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { formatDate } from "@/lib/utils";
-import { STATUS_STYLES } from "@/lib/constants";
+import { formatDate, formatDateTime, downloadCsv } from "@/lib/utils";
+import { STATUS_STYLES, PROGRAM_REQUIREMENT_OPTIONS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,12 +20,75 @@ interface ScholarshipProgram {
   created_at?: string;
 }
 
-const emptyForm = { scholarship_name: "", description: "", requirements: "", deadline: "", status: "Open" as "Open" | "Closed" };
+interface ProgramApplication {
+  application_id: number;
+  student_id: number;
+  scholarship_id: number;
+  application_date: string;
+  application_status: string;
+  remarks?: string | null;
+  student_accounts?: {
+    given_name?: string; last_name?: string; student_number?: string;
+    program_name?: string; year_level?: string; sex?: string;
+    registration_status?: string; account_status?: string;
+  } | {
+    given_name?: string; last_name?: string; student_number?: string;
+    program_name?: string; year_level?: string; sex?: string;
+    registration_status?: string; account_status?: string;
+  }[];
+}
+
+interface ProgramForm {
+  application_id: number;
+  student_id?: string;
+  given_name?: string; last_name?: string; middle_name?: string; ext_name?: string;
+  sex?: string; birthdate?: string; complete_program_name?: string; year_level?: string;
+  father_name?: string; mother_name?: string; street_barangay?: string; zipcode?: string;
+  disability?: string; indigenous_people_group?: string; contact_number?: string;
+  email_address?: string; income_tax_return?: string; annual_income_family?: number;
+}
+
+interface ProgramDoc {
+  document_id: number;
+  student_id: number;
+  application_id?: number;
+  document_type: string;
+  file_path: string;
+  upload_date: string;
+}
+
+interface ProgramAcad {
+  record_id: number;
+  student_id: number;
+  applicant_type?: string;
+  shs_gwa?: number;
+  college_gpa?: number;
+  proof_image_path?: string;
+}
+
+function fill(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "N/A";
+  return String(value);
+}
+
+const emptyForm = { scholarship_name: "", description: "", requirements: [] as string[], deadline: "", status: "Open" as "Open" | "Closed" };
+
+function parseRequirements(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split("|")
+    .map((r) => r.trim())
+    .filter(Boolean);
+}
 
 export default function ManageProgramsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [programs, setPrograms] = useState<ScholarshipProgram[]>([]);
+  const [apps, setApps] = useState<ProgramApplication[]>([]);
+  const [forms, setForms] = useState<ProgramForm[]>([]);
+  const [docs, setDocs] = useState<ProgramDoc[]>([]);
+  const [acads, setAcads] = useState<ProgramAcad[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -39,8 +102,20 @@ export default function ManageProgramsPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
 
-      const { data, error } = await sb.from("scholarship_programs").select("*").order("created_at", { ascending: false });
-      if (!error) setPrograms(data || []);
+      const [progQ, appQ, formQ, docsQ, acadQ] = await Promise.all([
+        sb.from("scholarship_programs").select("*").order("created_at", { ascending: false }),
+        sb.from("scholarship_applications")
+          .select("application_id, student_id, scholarship_id, application_date, application_status, remarks, student_accounts(given_name, last_name, student_number, program_name, year_level, sex, registration_status, account_status)")
+          .order("application_date", { ascending: false }),
+        sb.from("ched_form_input").select("*").order("ched_form_id", { ascending: false }),
+        sb.from("support_documents").select("*").order("upload_date", { ascending: false }),
+        sb.from("support_academic_records").select("*").order("created_at", { ascending: false }),
+      ]);
+      if (!progQ.error) setPrograms(progQ.data || []);
+      if (!appQ.error) setApps(appQ.data || []);
+      if (!formQ.error) setForms(formQ.data || []);
+      if (!docsQ.error) setDocs(docsQ.data || []);
+      if (!acadQ.error) setAcads(acadQ.data || []);
       if (!ignore) setLoading(false);
     }
     startFetching();
@@ -58,11 +133,20 @@ export default function ManageProgramsPage() {
     setForm({
       scholarship_name: p.scholarship_name || "",
       description: p.description || "",
-      requirements: p.requirements || "",
+      requirements: parseRequirements(p.requirements),
       deadline: p.deadline || "",
       status: p.status || "Open",
     });
     setShowModal(true);
+  }
+
+  function toggleRequirement(requirement: string, checked: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      requirements: checked
+        ? [...prev.requirements, requirement]
+        : prev.requirements.filter((r) => r !== requirement),
+    }));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -74,7 +158,7 @@ export default function ManageProgramsPage() {
     const payload = {
       scholarship_name: form.scholarship_name.trim(),
       description: form.description.trim() || null,
-      requirements: form.requirements.trim() || null,
+      requirements: form.requirements.length ? form.requirements.join(" | ") : null,
       deadline: form.deadline || null,
       status: form.status,
     };
@@ -102,6 +186,76 @@ export default function ManageProgramsPage() {
     if (!error) setPrograms((prev) => prev.filter((p) => p.scholarship_id !== id));
   }
 
+  function buildProgramCsvRows(scholarshipId: number) {
+    const prog = programs.find((p) => p.scholarship_id === scholarshipId);
+    const programApps = apps
+      .filter((a) => a.scholarship_id === scholarshipId)
+      .sort((a, b) => a.application_id - b.application_id);
+    const docByApp: Record<number, string> = {};
+    const docFilesByApp: Record<number, string> = {};
+    docs.forEach((d) => {
+      const key = d.application_id ?? d.student_id;
+      if (!key) return;
+      docByApp[key] = docByApp[key] ? `${docByApp[key]}; ${d.document_type}` : d.document_type;
+      docFilesByApp[key] = docFilesByApp[key] ? `${docFilesByApp[key]}; ${d.file_path}` : d.file_path;
+    });
+    const rows = programApps.map((a) => {
+      const c = forms.find((f) => f.application_id === a.application_id);
+      const sa = Array.isArray(a.student_accounts) ? a.student_accounts[0] : a.student_accounts;
+      const acad = acads.find((ac) => ac.student_id === a.student_id);
+      return {
+        "Application ID": a.application_id,
+        "Student No.": fill(sa?.student_number || c?.student_id),
+        "Last Name": fill(c?.last_name || sa?.last_name),
+        "First Name": fill(c?.given_name || sa?.given_name),
+        "Middle Name": fill(c?.middle_name),
+        "Ext. Name": fill(c?.ext_name),
+        "Sex": fill(c?.sex || sa?.sex),
+        "Birthdate": fill(c?.birthdate),
+        "Program": fill(c?.complete_program_name || sa?.program_name),
+        "Year Level": fill(c?.year_level || sa?.year_level),
+        "Scholarship Program": fill(prog?.scholarship_name),
+        "Application Status": a.application_status,
+        "Application Date": formatDateTime(a.application_date),
+        "Father's Full Name": fill(c?.father_name),
+        "Mother's Full Name": fill(c?.mother_name),
+        "Street / Barangay": fill(c?.street_barangay),
+        "Zipcode": fill(c?.zipcode),
+        "Contact Number": fill(c?.contact_number),
+        "Email Address": fill(c?.email_address),
+        "Disability": fill(c?.disability),
+        "Indigenous People Group": fill(c?.indigenous_people_group),
+        "Annual Family Income (PHP)": c?.annual_income_family != null ? Number(c.annual_income_family) : 0,
+        "ITR File Present": c?.income_tax_return ? "Yes" : "No",
+        "ITR File Path": fill(c?.income_tax_return),
+        "Registration Status": fill(sa?.registration_status),
+        "Account Status": fill(sa?.account_status),
+        "Supporting Documents": fill(docByApp[a.application_id]),
+        "Supporting Doc Files": fill(docFilesByApp[a.application_id]),
+        "Applicant Type": fill(acad?.applicant_type),
+        "SHS GWA": acad?.shs_gwa != null ? Number(acad.shs_gwa) : acad?.college_gpa != null ? Number(acad.college_gpa) : "N/A",
+        "College GPA": acad?.college_gpa != null ? Number(acad.college_gpa) : acad?.shs_gwa != null ? Number(acad.shs_gwa) : "N/A",
+        "Academic Proof File": fill(acad?.proof_image_path),
+        "Remarks": fill(a.remarks),
+      };
+    });
+    return { rows, name: prog?.scholarship_name || "scholarship" };
+  }
+
+  function exportProgramCsv(scholarshipId: number) {
+    const { rows, name } = buildProgramCsvRows(scholarshipId);
+    if (!rows.length) { setMessage("No applications yet for this scholarship."); return; }
+    downloadCsv(`${name.replace(/[^\w]+/g, "_").toLowerCase()}-applications.csv`, rows);
+    setMessage(`Exported ${rows.length} application form(s) for "${name}".`);
+  }
+
+  function exportAllProgramsCsv() {
+    const all = programs.flatMap((p) => buildProgramCsvRows(p.scholarship_id).rows);
+    if (!all.length) { setMessage("No applications found yet."); return; }
+    downloadCsv("all-scholarship-applications.csv", all);
+    setMessage(`Exported ${all.length} application form(s) across all scholarships.`);
+  }
+
   if (loading) return <Spinner label="Loading programs..." color="maroon" />;
 
   return (
@@ -112,6 +266,13 @@ export default function ManageProgramsPage() {
           <p className="mt-1 text-xs text-[#8B7376]">Create, edit, or close the scholarships students can apply to.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={exportAllProgramsCsv}
+            disabled={!apps.length}
+            className="rounded-lg border border-[#7B1113]/30 px-4 py-2.5 text-xs font-bold text-[#7B1113] hover:bg-[#7B1113]/5 disabled:opacity-40"
+          >
+            &#11015; Export All Applications CSV
+          </button>
           <button onClick={openNew} className="rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#540111]">
             + Create New
           </button>
@@ -129,19 +290,33 @@ export default function ManageProgramsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {programs.map((p) => (
-            <article key={p.scholarship_id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <article key={p.scholarship_id} className="flex flex-col rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-sm font-bold text-[#7B1113]">{p.scholarship_name}</h3>
                 <Badge className={STATUS_STYLES[p.status] || ""}>{p.status}</Badge>
               </div>
               <p className="mt-2 line-clamp-2 flex-1 text-xs text-[#6B5458]">{p.description || "No description."}</p>
-              {p.requirements && (
-                <p className="mt-2 text-[11px] text-[#8B7376]">Requirements: {p.requirements}</p>
+              {parseRequirements(p.requirements).length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[11px] font-semibold text-[#241012]">Requirements</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {parseRequirements(p.requirements).map((r) => (
+                      <span key={r} className="rounded-full bg-[#7B1113]/5 px-2 py-0.5 text-[10px] font-semibold text-[#7B1113]">{r}</span>
+                    ))}
+                  </div>
+                </div>
               )}
               <p className="mt-2 text-[11px] text-[#8B7376]">
                 Deadline: <span className="font-semibold text-[#241012]">{formatDate(p.deadline)}</span>
               </p>
               <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => exportProgramCsv(p.scholarship_id)}
+                  className="flex-1 rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] hover:bg-[#7B1113]/5"
+                  title={`Download ${apps.filter((a) => a.scholarship_id === p.scholarship_id).length} application form(s) as CSV`}
+                >
+                  Applications CSV
+                </button>
                 <button
                   onClick={() => openEdit(p)}
                   className="flex-1 rounded-lg border border-[#7B1113]/30 px-3 py-1.5 text-[11px] font-bold text-[#7B1113] hover:bg-[#7B1113]/5"
@@ -174,7 +349,7 @@ export default function ManageProgramsPage() {
                   value={form.scholarship_name}
                   onChange={(e) => setForm({ ...form, scholarship_name: e.target.value })}
                   required
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
                 />
               </label>
               <label className="block text-xs font-semibold text-[#241012]">
@@ -183,17 +358,27 @@ export default function ManageProgramsPage() {
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
                 />
               </label>
               <label className="block text-xs font-semibold text-[#241012]">
                 Requirements
-                <textarea
-                  value={form.requirements}
-                  onChange={(e) => setForm({ ...form, requirements: e.target.value })}
-                  rows={2}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
-                />
+                <span className="mt-1 block text-[10px] font-normal text-[#8B7376]">
+                  Check the requirements for this program. The checked items are exactly what appears in the student application form.
+                </span>
+                <div className="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+                  {PROGRAM_REQUIREMENT_OPTIONS.map((requirement) => (
+                    <label key={requirement} className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#241012]/[0.06] px-3 py-2 text-[11px] text-[#241012] transition hover:border-[#7B1113]/40 has-checked:border-[#7B1113] has-checked:bg-[#FAF5F5]">
+                      <input
+                        type="checkbox"
+                        checked={form.requirements.includes(requirement)}
+                        onChange={(e) => toggleRequirement(requirement, e.target.checked)}
+                        className="h-3.5 w-3.5 accent-[#7B1113]"
+                      />
+                      {requirement}
+                    </label>
+                  ))}
+                </div>
               </label>
               <label className="block text-xs font-semibold text-[#241012]">
                 Deadline
@@ -201,7 +386,7 @@ export default function ManageProgramsPage() {
                   type="date"
                   value={form.deadline}
                   onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
                 />
               </label>
               <label className="block text-xs font-semibold text-[#241012]">
@@ -209,17 +394,17 @@ export default function ManageProgramsPage() {
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value as "Open" | "Closed" })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
                 >
                   <option value="Open">Open</option>
                   <option value="Closed">Closed</option>
                 </select>
               </label>
-              <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+              <div className="flex justify-end gap-2 border-t border-[#241012]/[0.06] pt-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-bold text-[#6B5458] hover:bg-gray-50"
+                  className="rounded-lg border border-[#241012]/[0.06] px-4 py-2 text-xs font-bold text-[#6B5458] hover:bg-[#FAF7F5]"
                 >
                   Cancel
                 </button>

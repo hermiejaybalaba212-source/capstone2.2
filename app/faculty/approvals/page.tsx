@@ -102,10 +102,10 @@ export default function FacultyApprovalsPage() {
       <main className="flex min-h-[60vh] items-center justify-center">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
           <Link
             href="/"
-            className="mt-5 inline-block rounded-lg bg-[#166534] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
+            className="mt-5 inline-block rounded-lg bg-[#7B1113] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
           >
             Back to home
           </Link>
@@ -118,17 +118,17 @@ export default function FacultyApprovalsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-[#241012]">
             Approved Scholars List
           </h1>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-[#6B5458]">
             Final list of scholarship recipients already approved.
           </p>
         </div>
         <button
           onClick={exportCsv}
           disabled={scholars.length === 0}
-          className="self-start rounded-lg bg-[#166534] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:opacity-50"
+          className="self-start rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:opacity-50"
         >
           Export CSV
         </button>
@@ -145,21 +145,21 @@ export default function FacultyApprovalsPage() {
           {scholars.map((scholar) => (
             <div
               key={scholar.application_id}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-gray-900">
+                  <p className="text-sm font-bold text-[#241012]">
                     {scholar.student_accounts?.last_name},{" "}
                     {scholar.student_accounts?.given_name}
-                    <span className="ml-1 font-normal text-gray-400">
+                    <span className="ml-1 font-normal text-[#8B7376]">
                       ({scholar.student_accounts?.student_number})
                     </span>
                   </p>
-                  <p className="mt-1 text-xs text-[#166534]">
+                  <p className="mt-1 text-xs text-[#7B1113]">
                     {scholar.scholarship_programs?.scholarship_name}
                   </p>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-[11px] text-[#8B7376]">
                     {scholar.student_accounts?.program_name}
                   </p>
                 </div>

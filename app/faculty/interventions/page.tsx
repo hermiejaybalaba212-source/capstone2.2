@@ -185,10 +185,10 @@ function FacultyInterventionsContent() {
       <main className="flex min-h-[60vh] items-center justify-center">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
           <Link
             href="/"
-            className="mt-5 inline-block rounded-lg bg-[#166534] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
+            className="mt-5 inline-block rounded-lg bg-[#7B1113] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
           >
             Back to home
           </Link>
@@ -200,21 +200,21 @@ function FacultyInterventionsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">
+        <h1 className="text-xl font-bold text-[#241012]">
           Send Academic Intervention
         </h1>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6B5458]">
           Counsel and support at-risk scholars through targeted notifications.
         </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Left: Send Form */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-900">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">
             Send Academic Intervention
           </h2>
-          <p className="mt-1 text-[11px] text-gray-500">
+          <p className="mt-1 text-[11px] text-[#6B5458]">
             Select an at-risk student and compose a counseling message. The
             student will receive it as a notification in their portal.
           </p>
@@ -232,13 +232,13 @@ function FacultyInterventionsContent() {
 
           <form onSubmit={handleSendIntervention} className="mt-4 space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-700">
+              <label className="mb-1 block text-xs font-semibold text-[#241012]">
                 At-Risk Student
               </label>
               <select
                 value={targetStudent}
                 onChange={(e) => setTargetStudent(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
+                className="w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]"
               >
                 <option value="">Select an at-risk student&hellip;</option>
                 {activeStudents.map((s) => (
@@ -253,7 +253,7 @@ function FacultyInterventionsContent() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-700">
+              <label className="mb-1 block text-xs font-semibold text-[#241012]">
                 Intervention Message
               </label>
               <textarea
@@ -261,14 +261,14 @@ function FacultyInterventionsContent() {
                 onChange={(e) => setInterventionMsg(e.target.value)}
                 rows={5}
                 placeholder="e.g., Hi! We noticed your average dropped below the maintenance grade. Please visit the guidance office to discuss support options..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs outline-none focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
+                className="w-full rounded-lg border border-[#241012]/15 px-3 py-2 text-xs outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]"
               />
             </div>
 
             <button
               type="submit"
               disabled={sending}
-              className="w-full rounded-lg bg-[#166534] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:opacity-60"
+              className="w-full rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:opacity-60"
             >
               {sending ? "Sending..." : "Send intervention"}
             </button>
@@ -276,11 +276,11 @@ function FacultyInterventionsContent() {
         </div>
 
         {/* Right: Recent Messages */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-900">
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">
             Recent Messages Sent
           </h2>
-          <p className="mt-1 text-[11px] text-gray-500">
+          <p className="mt-1 text-[11px] text-[#6B5458]">
             The latest 15 intervention and warning messages.
           </p>
 
@@ -297,14 +297,14 @@ function FacultyInterventionsContent() {
               {recentMessages.map((msg) => (
                 <li
                   key={msg.notification_id}
-                  className="rounded-xl border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5] p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-gray-900">
+                    <p className="text-xs font-bold text-[#241012]">
                       {getSa(msg.student_accounts)?.last_name},{" "}
                       {getSa(msg.student_accounts)?.given_name}
                     </p>
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-[#8B7376]">
                       {formatDateTime(msg.date_sent)}
                     </span>
                   </div>
@@ -314,14 +314,14 @@ function FacultyInterventionsContent() {
                         className={
                           msg.notification_type === "Warning"
                             ? "border-red-200 bg-red-100 text-red-700"
-                            : "border-blue-200 bg-blue-100 text-blue-700"
+                            : "border-blue-200 bg-blue-100 text-[#7B1113]"
                         }
                       >
                         {msg.notification_type}
                       </Badge>
                     </div>
                   )}
-                  <p className="mt-1 line-clamp-2 text-[11px] text-gray-600">
+                  <p className="mt-1 line-clamp-2 text-[11px] text-[#6B5458]">
                     {msg.message}
                   </p>
                 </li>

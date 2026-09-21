@@ -166,6 +166,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-[#FAF7F5] font-sans text-[#241012]">
+      {/* Back to homepage */}
+      <Link href="/" title="Back to homepage" aria-label="Back to homepage" className="fixed right-4 top-4 z-[60] inline-flex items-center gap-2 rounded-full border border-[#241012]/10 bg-white py-2 pl-2.5 pr-4 text-xs font-semibold text-[#7B1113] shadow-lg transition hover:bg-[#FAF7F5]">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7B1113]/10">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" /></svg>
+        </span>
+        Home
+      </Link>
+
       {/* Left: brand / info panel */}
       <aside className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#7B1113] via-[#5A0C0E] to-[#3E0009] p-12 text-white xl:flex 2xl:p-16">
         <div className="pointer-events-none absolute -right-28 -top-28 h-80 w-80 rounded-full bg-white/[0.06]" />
@@ -208,29 +216,19 @@ export default function LoginPage() {
       {/* Right: simple login box */}
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center justify-between lg:hidden">
-            <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#7B1113] to-[#540111] text-xs font-black text-white">SPC</span>
-              <span className="leading-tight">
-                <span className="block text-sm font-bold text-[#241012]">St. Peter&rsquo;s College</span>
-                <span className="block text-[10px] text-[#6B5458]">Scholarship System</span>
-              </span>
-            </Link>
-            <Link href="/register" className="rounded-lg border border-[#7B1113]/25 px-4 py-2 text-xs font-semibold text-[#7B1113] transition hover:bg-[#7B1113]/5">Register</Link>
+          {/* Brand marker (small screens) */}
+          <div className="mb-8 flex flex-col items-center lg:hidden">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#7B1113] to-[#540111] text-sm font-black text-white">SPC</span>
+            <span className="mt-3 block text-lg font-bold text-[#241012]">St. Peter&rsquo;s College</span>
+            <span className="mt-0.5 block text-xs text-[#6B5458]">Scholarship System</span>
           </div>
 
           <div className="rounded-2xl border border-[#241012]/[0.06] bg-white p-8 shadow-[0_18px_50px_-20px_rgba(36,16,18,0.18)] sm:p-9">
-            <div className="hidden items-center gap-2 lg:flex">
-              {["Student", "Faculty", "CHED", "Admin"].map((r) => (
-                <span key={r} className="rounded-full bg-[#7B1113]/[0.06] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#7B1113]">{r}</span>
-              ))}
-            </div>
-
-            <h2 className="mt-5 text-2xl font-bold tracking-tight text-[#241012]">
+            <h2 className="text-2xl font-bold tracking-tight text-[#241012]">
               {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset your password" : "Set a new password"}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#6B5458]">
-              {mode === "login" ? "Sign in to continue and manage your scholarship application." : mode === "forgot" ? "Enter your email and we will send you a secure reset link." : "Choose a strong password of at least 8 characters."}
+              {mode === "login" ? "Sign in to your scholarship account." : mode === "forgot" ? "Enter your email and we will send you a secure reset link." : "Choose a strong password of at least 8 characters."}
             </p>
 
             {error && <div className="mt-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span className="font-bold">!</span><p>{error}</p></div>}
@@ -250,29 +248,23 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-[#241012]/[0.08]" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8B7376]">Secure sign in</span>
-              <span className="h-px flex-1 bg-[#241012]/[0.08]" />
-            </div>
+            {mode === "login" && (
+              <div className="mt-5 text-center">
+                <button type="button" onClick={() => { setMode("forgot"); setError(""); setMessage(""); }} className="text-sm font-semibold text-[#7B1113] transition hover:underline">Forgot password?</button>
+              </div>
+            )}
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm">
+            <div className="mt-6 border-t border-[#241012]/[0.06] pt-5 text-center">
               {mode === "login" ? (
-                <>
-                  <button type="button" onClick={() => { setMode("forgot"); setError(""); setMessage(""); }} className="font-semibold text-[#7B1113] transition hover:underline">Forgot password?</button>
-                  <span className="text-[#8B7376]">&middot;</span>
-                  <span className="text-[#6B5458]">No account yet?</span>
+                <p className="text-sm text-[#6B5458]">
+                  No account yet?{" "}
                   <Link href="/register" className="font-semibold text-[#7B1113] transition hover:underline">Register</Link>
-                </>
+                </p>
               ) : (
-                <button type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }} className="font-semibold text-[#7B1113] transition hover:underline">&larr; Back to login</button>
+                <button type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }} className="text-sm font-semibold text-[#7B1113] transition hover:underline">&larr; Back to login</button>
               )}
             </div>
           </div>
-
-          <p className="mt-6 text-center text-xs leading-relaxed text-[#8B7376]">
-            Having trouble? Contact the Scholarship &amp; Financial Aid Office for help.
-          </p>
         </div>
       </main>
     </div>

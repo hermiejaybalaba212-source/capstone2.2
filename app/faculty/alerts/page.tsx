@@ -166,10 +166,10 @@ export default function FacultyAlertsPage() {
       <main className="flex min-h-[60vh] items-center justify-center">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
           <Link
             href="/"
-            className="mt-5 inline-block rounded-lg bg-[#166534] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
+            className="mt-5 inline-block rounded-lg bg-[#7B1113] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
           >
             Back to home
           </Link>
@@ -184,10 +184,10 @@ export default function FacultyAlertsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">
+        <h1 className="text-xl font-bold text-[#241012]">
           Early Warning Alerts
         </h1>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6B5458]">
           Monitor students whose grades have fallen below the 93% maintenance threshold.
         </p>
       </div>
@@ -196,11 +196,11 @@ export default function FacultyAlertsPage() {
         <button
           onClick={scanRegistrarGrades}
           disabled={scanning}
-          className="rounded-lg bg-[#166534] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {scanning ? "Scanning Registrar..." : "Scan Registrar Grades"}
         </button>
-        {scanMsg && <span className="text-xs text-gray-600">{scanMsg}</span>}
+        {scanMsg && <span className="text-xs text-[#6B5458]">{scanMsg}</span>}
       </div>
 
       {alerts.length === 0 ? (
@@ -213,7 +213,7 @@ export default function FacultyAlertsPage() {
         <>
           {activeAlerts.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold text-gray-900">
+              <h2 className="text-sm font-bold text-[#241012]">
                 Active Alerts ({activeAlerts.length})
               </h2>
               {activeAlerts.map((alert) => (
@@ -222,10 +222,10 @@ export default function FacultyAlertsPage() {
                   className="rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-[#241012]">
                       {alert.student_accounts?.last_name},{" "}
                       {alert.student_accounts?.given_name}
-                      <span className="ml-1 font-normal text-gray-400">
+                      <span className="ml-1 font-normal text-[#8B7376]">
                         ({alert.student_accounts?.student_number})
                       </span>
                     </p>
@@ -237,11 +237,11 @@ export default function FacultyAlertsPage() {
                         {alert.risk_level} risk
                       </Badge>
                     )}
-                    <span className="ml-auto text-[10px] text-gray-400">
+                    <span className="ml-auto text-[10px] text-[#8B7376]">
                       {formatDateTime(alert.warning_date)}
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-[#6B5458]">
                     {alert.warning_message ||
                       "Below the required maintaining grade."}
                   </p>
@@ -250,7 +250,7 @@ export default function FacultyAlertsPage() {
                       Average: {alert.average_grade ?? alert.gpa ?? "\u2014"}%
                     </span>
                     {alert.student_accounts?.program_name && (
-                      <span className="text-gray-400">
+                      <span className="text-[#8B7376]">
                         {alert.student_accounts.program_name} &middot;{" "}
                         {alert.student_accounts.year_level}
                       </span>
@@ -258,7 +258,7 @@ export default function FacultyAlertsPage() {
                   </div>
                   <Link
                     href={`/faculty/interventions?studentId=${alert.student_id}`}
-                    className="mt-3 inline-block rounded-lg bg-[#166534] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d]"
+                    className="mt-3 inline-block rounded-lg bg-[#7B1113] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#14532d]"
                   >
                     Send intervention &rarr;
                   </Link>
@@ -269,19 +269,19 @@ export default function FacultyAlertsPage() {
 
           {resolvedAlerts.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold text-gray-900">
+              <h2 className="text-sm font-bold text-[#241012]">
                 Resolved ({resolvedAlerts.length})
               </h2>
               {resolvedAlerts.map((alert) => (
                 <div
                   key={alert.warning_id}
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  className="rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-[#241012]">
                       {alert.student_accounts?.last_name},{" "}
                       {alert.student_accounts?.given_name}
-                      <span className="ml-1 font-normal text-gray-400">
+                      <span className="ml-1 font-normal text-[#8B7376]">
                         ({alert.student_accounts?.student_number})
                       </span>
                     </p>
@@ -289,15 +289,15 @@ export default function FacultyAlertsPage() {
                       Resolved
                     </Badge>
                     {alert.risk_level && (
-                      <Badge className="border-gray-200 bg-gray-100 text-gray-600">
+                      <Badge className="border-[#241012]/[0.06] bg-[#F3EEEB] text-[#6B5458]">
                         {alert.risk_level} risk
                       </Badge>
                     )}
-                    <span className="ml-auto text-[10px] text-gray-400">
+                    <span className="ml-auto text-[10px] text-[#8B7376]">
                       {formatDateTime(alert.warning_date)}
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-[#6B5458]">
                     {alert.warning_message ||
                       "Below the required maintaining grade."}
                   </p>
@@ -306,7 +306,7 @@ export default function FacultyAlertsPage() {
                       Average: {alert.average_grade ?? alert.gpa ?? "\u2014"}%
                     </span>
                     {alert.student_accounts?.program_name && (
-                      <span className="text-gray-400">
+                      <span className="text-[#8B7376]">
                         {alert.student_accounts.program_name} &middot;{" "}
                         {alert.student_accounts.year_level}
                       </span>

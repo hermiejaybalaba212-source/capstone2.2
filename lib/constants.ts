@@ -17,6 +17,46 @@ export const NOTIFICATION_TYPE_STYLES: Record<string, string> = {
 
 export const DOC_TYPES = ["COR", "Valid ID", "Signature Form"] as const;
 
+export const PROGRAM_REQUIREMENT_OPTIONS = [
+  "COR",
+  "Valid ID",
+  "Signature Form",
+  "Certificate of Enrollment",
+  "Transcript of Records",
+  "Report Card (Form 138)",
+  "Good Moral Certificate",
+  "Barangay Certificate of Residency",
+  "Income Tax Return (ITR)",
+  "Certificate of Indigency",
+  "Medical Certificate",
+  "Parent Waiver / Consent",
+] as const;
+
+export const DISABILITY_OPTIONS = [
+  "None",
+  "Blind",
+  "Low Vision",
+  "Deaf",
+  "Hard of Hearing",
+  "Speech / Language Impairment",
+  "Mobility Impairment",
+  "Mental / Psychosocial Disability",
+  "Learning Disability",
+  "Other Disability",
+] as const;
+
+export const IP_GROUP_OPTIONS = [
+  "None",
+  "Higaonon",
+  "Maranao",
+  "Subanen",
+  "Talaandig",
+  "Manobo",
+  "B'laan",
+  "Teduray",
+  "Other Indigenous People Group",
+] as const;
+
 export const PROGRAMS = [
   "Bachelor of Science in Civil Engineering",
   "Bachelor of Science in Electrical Engineering",

@@ -250,11 +250,11 @@ export default function StudentDashboardPage() {
 
   return (
     <div>
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">
+      <div className="rounded-2xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+        <h1 className="text-xl font-bold text-[#241012]">
           {firstName ? <>Welcome back, {firstName}!</> : <>Welcome back!</>}
         </h1>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6B5458]">
           Here is a quick look at your scholarship journey and any updates for you.
         </p>
       </div>
@@ -274,34 +274,30 @@ export default function StudentDashboardPage() {
 
       <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Active Programs" value={stats.activePrograms} />
-        <StatCard label="My Applications" value={stats.myApplications} tone="blue" />
-        <StatCard label="Unread Notifications" value={stats.unreadNotifications} tone="green" />
-        <StatCard
-          label="Academic Records"
-          value={stats.academicRecords}
-          tone={alerts.length > 0 ? "red" : "maroon"}
-        />
+        <StatCard label="My Applications" value={stats.myApplications} />
+        <StatCard label="Unread Notifications" value={stats.unreadNotifications} />
+        <StatCard label="Academic Records" value={stats.academicRecords} />
       </section>
 
       {currentStatus && (
         <section className="mt-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Your Scholarship Status</p>
-                <h2 className="mt-1 text-base font-bold text-gray-900">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8B7376]">Your Scholarship Status</p>
+                <h2 className="mt-1 text-base font-bold text-[#241012]">
                   {nearby?.scholarship_programs?.scholarship_name || "Scholarship Application"}
                 </h2>
-                <p className="mt-1 text-xs text-gray-500">{statusNote(currentStatus).note}</p>
+                <p className="mt-1 text-xs text-[#6B5458]">{statusNote(currentStatus).note}</p>
               </div>
               <Badge className={STATUS_STYLES[currentStatus] || ""}>{currentStatus}</Badge>
             </div>
             <div className="mt-4">
-              <div className="mb-1 flex items-center justify-between text-[10px] text-gray-400">
+              <div className="mb-1 flex items-center justify-between text-[10px] text-[#8B7376]">
                 <span>Pending</span>
                 <span>Approved</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[#F3EEEB]">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     currentStatus === "Approved" ? "bg-green-500" : currentStatus === "Not Approved" ? "bg-red-500" : "bg-amber-500"
@@ -309,14 +305,14 @@ export default function StudentDashboardPage() {
                   style={{ width: `${currentStatus === "Approved" ? 100 : currentStatus === "Not Approved" ? 33 : 50}%` }}
                 />
               </div>
-              <div className="mt-2 flex items-center gap-4 text-[10px] text-gray-500">
+              <div className="mt-2 flex items-center gap-4 text-[10px] text-[#6B5458]">
                 {["Pending", "Approved", "Not Approved"].map((step) => {
                   const isActive = step === currentStatus;
                   const isDone = currentStatus === "Approved" && step === "Pending";
                   return (
                     <span key={step} className="flex items-center gap-1">
                       <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#7B1113]" : isDone ? "bg-green-500" : "bg-gray-300"}`} />
-                      <span className={isActive ? "font-semibold text-gray-900" : ""}>{step}</span>
+                      <span className={isActive ? "font-semibold text-[#241012]" : ""}>{step}</span>
                     </span>
                   );
                 })}
@@ -327,7 +323,7 @@ export default function StudentDashboardPage() {
       )}
 
       <section className="mt-6">
-        <h2 className="text-sm font-bold text-gray-700">My Scholarship Applications</h2>
+        <h2 className="text-sm font-bold text-[#241012]">My Scholarship Applications</h2>
         {applications.length === 0 ? (
           <div className="mt-3">
             <EmptyState
@@ -345,14 +341,14 @@ export default function StudentDashboardPage() {
               return (
                 <div
                   key={app.application_id}
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  className="rounded-xl border border-[#241012]/[0.06] bg-white p-4 shadow-sm"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-[#241012]">
                         {app.scholarship_programs?.scholarship_name || "Scholarship Application"}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-gray-500">
+                      <p className="mt-0.5 text-[11px] text-[#6B5458]">
                         Submitted {formatDateTime(app.application_date)}
                       </p>
                     </div>
@@ -360,8 +356,8 @@ export default function StudentDashboardPage() {
                       {app.application_status || "Pending"}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-xs text-gray-700">{info.note}</p>
-                  <p className="mt-0.5 text-[11px] text-gray-500">{info.hint}</p>
+                  <p className="mt-2 text-xs text-[#241012]">{info.note}</p>
+                  <p className="mt-0.5 text-[11px] text-[#6B5458]">{info.hint}</p>
                 </div>
               );
             })}
@@ -370,7 +366,7 @@ export default function StudentDashboardPage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-bold text-gray-700">Active Early Warning Alerts</h2>
+        <h2 className="text-sm font-bold text-[#241012]">Active Early Warning Alerts</h2>
         {alerts.length === 0 ? (
           <div className="mt-3">
             <EmptyState
@@ -395,12 +391,12 @@ export default function StudentDashboardPage() {
                       Risk: {alert.risk_level}
                     </span>
                   )}
-                  <span className="ml-auto text-[11px] text-gray-500">
+                  <span className="ml-auto text-[11px] text-[#6B5458]">
                     {formatDateTime(alert.warning_date)}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-gray-800">{alert.warning_message}</p>
-                <div className="mt-2 flex gap-4 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-[#241012]">{alert.warning_message}</p>
+                <div className="mt-2 flex gap-4 text-xs text-[#6B5458]">
                   {alert.gpa != null && (
                     <span>
                       GPA: <strong>{alert.gpa}</strong>
@@ -419,7 +415,7 @@ export default function StudentDashboardPage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-bold text-gray-700">Recent Notifications</h2>
+        <h2 className="text-sm font-bold text-[#241012]">Recent Notifications</h2>
         {notifications.length === 0 ? (
           <div className="mt-3">
             <EmptyState
@@ -433,15 +429,15 @@ export default function StudentDashboardPage() {
             {notifications.map((n) => (
               <div
                 key={n.notification_id}
-                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs ${n.status === "Unread" ? "font-bold text-gray-900" : "text-gray-600"}`}>
+                    <p className={`text-xs ${n.status === "Unread" ? "font-bold text-[#241012]" : "text-[#6B5458]"}`}>
                       {n.title || "Notification"}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">{n.message}</p>
-                    <p className="mt-1 text-[11px] text-gray-400">{formatDateTime(n.date_sent)}</p>
+                    <p className="mt-1 text-xs text-[#6B5458]">{n.message}</p>
+                    <p className="mt-1 text-[11px] text-[#8B7376]">{formatDateTime(n.date_sent)}</p>
                   </div>
                   {n.notification_type && (
                     <Badge className={NOTIFICATION_TYPE_STYLES[n.notification_type] || ""}>

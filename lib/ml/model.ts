@@ -1,41 +1,15 @@
 /**
  * Random Forest Classifier for Scholarship Applicant Ranking (TypeScript).
- * Features are prepared from CHED form / applicant data so the model
- * can rank applicants by financial need.
+ * The ranking is based ONLY on the applicant's annual family income, so
+ * each applicant is represented by a single feature: annual_income.
  */
 import { RandomForestClassifier } from "./random-forest";
 
 const DEFAULT_SEED = 2026;
 
-const FEATURE_COLUMNS = ["annual_income", "academic_score", "year_level", "sex"] as const;
+const FEATURE_COLUMNS = ["annual_income"] as const;
 
 export type ModelFeatures = Record<(typeof FEATURE_COLUMNS)[number], number>;
-
-const YEAR_MAP: Record<string, number> = {
-  "1st": 1,
-  "2nd": 2,
-  "3rd": 3,
-  "4th": 4,
-  "5th": 5,
-  "1st year": 1,
-  "2nd year": 2,
-  "3rd year": 3,
-  "4th year": 4,
-  "1styear": 1,
-  "2ndyear": 2,
-  "3rdyear": 3,
-  "4thyear": 4,
-  "first year": 1,
-  "second year": 2,
-  "third year": 3,
-  "fourth year": 4,
-  "fifth year": 5,
-  "1": 1,
-  "2": 2,
-  "3": 3,
-  "4": 4,
-  "5": 5,
-};
 
 export interface ParsedRow {
   columns: Record<string, string | number>;
@@ -105,23 +79,10 @@ function numOf(value: string | number | undefined, fallback: number): number {
   return isNaN(n) ? fallback : n;
 }
 
-/** Extract and encode the four model features for one applicant row. */
+/** Extract and encode the single model feature for one applicant row. */
 export function prepareFeatures(row: Record<string, string | number>): ModelFeatures {
   const income = numOf(firstValue(row, "annual_income_family", "income", "annual_income"), 150000);
-
-  const academic = numOf(
-    firstValue(row, "shs_gwa", "college_gpa", "gwa", "gpa", "academic_score"),
-    85
-  );
-
-  const yearRaw = firstValue(row, "year_level");
-  let year = numOf(yearRaw, NaN);
-  if (isNaN(year)) year = YEAR_MAP[textOf(yearRaw).toLowerCase()] ?? 3;
-
-  const sexRaw = textOf(firstValue(row, "sex", "gender"));
-  const sex = sexRaw === "female" ? 1 : 0;
-
-  return { annual_income: income, academic_score: academic, year_level: year, sex };
+  return { annual_income: income };
 }
 
 /** Extract label (high_need) from a row. Falls back to income-based rule. */
@@ -137,24 +98,16 @@ export function prepareLabels(row: Record<string, string | number>): string {
   return income < 150000 ? "1" : "0";
 }
 
-/** Generate synthetic training data (port of generate_synthetic_data). */
+/** Generate synthetic training data based on annual income only. */
 export function generateSyntheticData(n = 400, seed = DEFAULT_SEED): { X: ModelFeatures[]; y: string[] } {
   const rng = seededRandom(seed);
   const X: ModelFeatures[] = [];
   const y: string[] = [];
   for (let i = 0; i < n; i += 1) {
     const income = Math.exp(Math.log(40000) + rng() * (Math.log(600000) - Math.log(40000)));
-    const gwa = 75 + rng() * 25;
-    const year_level = Math.floor(rng() * 4) + 1;
-    const sex = rng() > 0.5 ? 1 : 0;
-
-    let needScore = 0;
-    needScore += income < 100000 ? 4 : income < 150000 ? 3 : income < 250000 ? 1 : 0;
-    needScore += gwa >= 90 ? 1 : 0;
-    needScore += year_level >= 3 ? 1 : 0;
-    const noise = gaussianNoise(rng);
-    const label = needScore + noise >= 3.5 ? "1" : "0";
-    X.push({ annual_income: income, academic_score: gwa, year_level, sex });
+    let label = income < 150000 ? "1" : "0";
+    if (rng() < 0.05) label = label === "1" ? "0" : "1";
+    X.push({ annual_income: income });
     y.push(label);
   }
   return { X, y };
@@ -169,14 +122,6 @@ function seededRandom(seed: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-function gaussianNoise(rng: () => number): number {
-  let u = 0;
-  let v = 0;
-  while (u === 0) u = rng();
-  while (v === 0) v = rng();
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) * 0.5;
 }
 
 /** In-memory trained model store (analogous to the .pkl files). */

@@ -279,6 +279,14 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen bg-[#FAF7F5] font-sans text-[#241012]">
+      {/* Back to homepage */}
+      <Link href="/" title="Back to homepage" aria-label="Back to homepage" className="fixed right-4 top-4 z-[60] inline-flex items-center gap-2 rounded-full border border-[#241012]/10 bg-white py-2 pl-2.5 pr-4 text-xs font-semibold text-[#7B1113] shadow-lg transition hover:bg-[#FAF7F5]">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7B1113]/10">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" /></svg>
+        </span>
+        Home
+      </Link>
+
       <aside className="relative hidden w-[40%] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#7B1113] via-[#5A0C0E] to-[#3E0009] p-12 text-white xl:flex 2xl:p-16">
         <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/[0.06]" />
         <div className="pointer-events-none absolute -bottom-36 -left-20 h-96 w-96 rounded-full bg-black/20" />
@@ -314,15 +322,13 @@ export default function RegisterPage() {
 
       <main className="flex flex-1 items-start justify-center px-4 py-8 sm:px-8 lg:items-center lg:py-10">
         <form onSubmit={handleRegister} className="w-full max-w-2xl">
-          <div className="mb-5 flex items-center justify-between lg:hidden">
-            <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#7B1113] to-[#540111] text-xs font-black text-white">SPC</span>
-              <div className="leading-tight">
-                <p className="text-sm font-bold text-[#241012]">St. Peter&rsquo;s College</p>
-                <p className="text-[10px] text-[#6B5458]">Scholarship System</p>
-              </div>
+          <div className="mb-6 flex flex-col items-center lg:hidden">
+            <Link href="/" className="flex flex-col items-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#7B1113] to-[#540111] text-sm font-black text-white">SPC</span>
+              <span className="mt-3 block text-lg font-bold text-[#241012]">St. Peter&rsquo;s College</span>
+              <span className="mt-0.5 block text-xs text-[#6B5458]">Scholarship System</span>
             </Link>
-            <Link href="/login" className="rounded-lg border border-[#7B1113]/25 px-4 py-2 text-xs font-semibold text-[#7B1113] transition hover:bg-[#7B1113]/5">Log in</Link>
+            <Link href="/login" className="mt-4 rounded-lg border border-[#7B1113]/25 px-4 py-2 text-xs font-semibold text-[#7B1113] transition hover:bg-[#7B1113]/5">Log in</Link>
           </div>
 
           <div className="rounded-2xl border border-[#241012]/[0.06] bg-white p-6 shadow-[0_18px_50px_-20px_rgba(36,16,18,0.18)] sm:p-8">

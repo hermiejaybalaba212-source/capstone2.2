@@ -74,8 +74,8 @@ export default function ChedDashboardPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#f0f2f8] px-6">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
-          <Link href="/" className="mt-5 inline-block rounded-lg bg-[#1e3a5f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#152b48]">Back to home</Link>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
+          <Link href="/" className="mt-5 inline-block rounded-lg bg-[#7B1113] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#540111]">Back to home</Link>
         </div>
       </main>
     );
@@ -87,42 +87,42 @@ export default function ChedDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">CHED Dashboard</h1>
-      <p className="mt-1 text-xs text-gray-500">Review applications, the ranking result, and approved beneficiaries.</p>
+      <h1 className="text-xl font-bold text-[#241012]">CHED Dashboard</h1>
+      <p className="mt-1 text-xs text-[#6B5458]">Review applications, the ranking result, and approved beneficiaries.</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total Applications" value={applications.length} tone="blue" />
+        <StatCard label="Total Applications" value={applications.length} tone="maroon" />
         <StatCard label="Ranking Results" value={rankings.length} tone="maroon" />
-        <StatCard label="Approved Beneficiaries" value={approvedBeneficiaryCount} tone="green" />
+        <StatCard label="Approved Beneficiaries" value={approvedBeneficiaryCount} tone="maroon" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-900">Pending Applications</h2>
-          <p className="mt-1 text-xs text-gray-500">Applications awaiting CHED review.</p>
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">Pending Applications</h2>
+          <p className="mt-1 text-xs text-[#6B5458]">Applications awaiting CHED review.</p>
           {pendingCount === 0 ? (
             <EmptyState icon="&#10003;" title="No pending applications" hint="All applications have been processed." />
           ) : (
             <div className="mt-3 space-y-2">
               {applications.filter((a) => a.application_status === "Pending").slice(0, 5).map((a) => (
-                <div key={a.application_id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                <div key={a.application_id} className="flex items-center justify-between rounded-lg border border-[#241012]/[0.06] bg-[#FAF7F5] px-3 py-2">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-900">{a.student_accounts?.last_name}, {a.student_accounts?.given_name}</p>
-                    <p className="text-[11px] text-gray-500">{a.scholarship_programs?.scholarship_name}</p>
+                    <p className="text-xs font-semibold text-[#241012]">{a.student_accounts?.last_name}, {a.student_accounts?.given_name}</p>
+                    <p className="text-[11px] text-[#6B5458]">{a.scholarship_programs?.scholarship_name}</p>
                   </div>
                   <Badge className={STATUS_STYLES[a.application_status] || ""}>{a.application_status}</Badge>
                 </div>
               ))}
               {pendingCount > 5 && (
-                <p className="text-[11px] text-gray-500">+ {pendingCount - 5} more pending applications</p>
+                <p className="text-[11px] text-[#6B5458]">+ {pendingCount - 5} more pending applications</p>
               )}
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-900">Approved Beneficiaries</h2>
-          <p className="mt-1 text-xs text-gray-500">Students approved by CHED.</p>
+        <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#241012]">Approved Beneficiaries</h2>
+          <p className="mt-1 text-xs text-[#6B5458]">Students approved by CHED.</p>
           {approvedCount === 0 ? (
             <EmptyState icon="&#128203;" title="No approved beneficiaries" hint="Approve applications in the Approvals page." />
           ) : (
@@ -130,14 +130,14 @@ export default function ChedDashboardPage() {
               {applications.filter((a) => a.application_status === "Approved").slice(0, 5).map((a) => (
                 <div key={a.application_id} className="flex items-center justify-between rounded-lg border border-green-100 bg-green-50 px-3 py-2">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-900">{a.student_accounts?.last_name}, {a.student_accounts?.given_name}</p>
-                    <p className="text-[11px] text-gray-500">{a.scholarship_programs?.scholarship_name}</p>
+                    <p className="text-xs font-semibold text-[#241012]">{a.student_accounts?.last_name}, {a.student_accounts?.given_name}</p>
+                    <p className="text-[11px] text-[#6B5458]">{a.scholarship_programs?.scholarship_name}</p>
                   </div>
                   <Badge className="border-green-200 bg-green-50 text-green-700">Approved</Badge>
                 </div>
               ))}
               {approvedCount > 5 && (
-                <p className="text-[11px] text-gray-500">+ {approvedCount - 5} more approved beneficiaries</p>
+                <p className="text-[11px] text-[#6B5458]">+ {approvedCount - 5} more approved beneficiaries</p>
               )}
             </div>
           )}

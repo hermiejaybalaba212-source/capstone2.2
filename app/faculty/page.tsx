@@ -115,10 +115,10 @@ export default function FacultyDashboardPage() {
       <main className="flex min-h-[60vh] items-center justify-center">
         <div className="max-w-sm text-center">
           <p className="text-4xl">&#128683;</p>
-          <h1 className="mt-3 text-lg font-bold text-gray-900">{fatalError}</h1>
+          <h1 className="mt-3 text-lg font-bold text-[#241012]">{fatalError}</h1>
           <Link
             href="/"
-            className="mt-5 inline-block rounded-lg bg-[#166534] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
+            className="mt-5 inline-block rounded-lg bg-[#7B1113] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#14532d]"
           >
             Back to home
           </Link>
@@ -129,30 +129,30 @@ export default function FacultyDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">
+      <h1 className="text-xl font-bold text-[#241012]">
         Faculty Monitoring Dashboard
       </h1>
-      <p className="mt-1 text-xs text-gray-500">Keep an eye on at-risk students and the interventions sent to them.</p>
+      <p className="mt-1 text-xs text-[#6B5458]">Keep an eye on at-risk students and the interventions sent to them.</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Active Alerts" value={activeAlerts.length} tone="red" />
+        <StatCard label="Active Alerts" value={activeAlerts.length} tone="maroon" />
         <StatCard
           label="Total Interventions Sent"
           value={totalInterventions}
-          tone="green"
+          tone="maroon"
         />
         <StatCard
           label="Approved Scholars"
           value={approvedCount}
-          tone="green"
+          tone="maroon"
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-bold text-gray-900">
+      <div className="rounded-xl border border-[#241012]/[0.06] bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-[#241012]">
           Active At-Risk Students
         </h2>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6B5458]">
           Students with unresolved early-warning alerts requiring attention.
         </p>
 
@@ -173,10 +173,10 @@ export default function FacultyDashboardPage() {
                 className="block rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm transition hover:shadow-md"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-bold text-gray-900">
+                  <p className="text-sm font-bold text-[#241012]">
                     {alert.student_accounts?.last_name},{" "}
                     {alert.student_accounts?.given_name}
-                    <span className="ml-1 font-normal text-gray-400">
+                    <span className="ml-1 font-normal text-[#8B7376]">
                       ({alert.student_accounts?.student_number})
                     </span>
                   </p>
@@ -193,16 +193,16 @@ export default function FacultyDashboardPage() {
                   <span className="font-bold text-red-700">
                     Average: {alert.average_grade ?? alert.gpa ?? "\u2014"}%
                   </span>
-                  <span className="text-gray-400">
+                  <span className="text-[#8B7376]">
                     {alert.student_accounts?.program_name} &middot;{" "}
                     {alert.student_accounts?.year_level}
                   </span>
-                  <span className="ml-auto text-gray-400">
+                  <span className="ml-auto text-[#8B7376]">
                     {formatDateTime(alert.warning_date)}
                   </span>
                 </div>
                 {alert.warning_message && (
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-[#6B5458]">
                     {alert.warning_message}
                   </p>
                 )}
