@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatDate, validateFile } from "@/lib/utils";
-import { DOC_TYPES, DISABILITY_OPTIONS, IP_GROUP_OPTIONS } from "@/lib/constants";
+import { DOC_TYPES, DISABILITY_OPTIONS, IP_GROUP_OPTIONS, getProgramRequirementDocs } from "@/lib/constants";
 import { Spinner } from "@/components/ui/spinner";
 
 interface StudentProfile {
@@ -29,14 +29,6 @@ interface ScholarshipProgram {
   requirements?: string;
   deadline?: string;
   status?: string;
-}
-
-function parseRequirements(value?: string | null): string[] {
-  if (!value) return [];
-  return value
-    .split("|")
-    .map((r) => r.trim())
-    .filter(Boolean);
 }
 
 export default function ApplyPage() {
@@ -74,6 +66,9 @@ function ApplyPageContent() {
     annualIncome: "",
   });
   const [itrFile, setItrFile] = useState<File | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState("");
+  const [showSampleForm, setShowSampleForm] = useState(false);
   const [docFiles, setDocFiles] = useState<Record<string, File | null>>({});
   const [acadApplicantType, setAcadApplicantType] = useState("");
   const [acadScore, setAcadScore] = useState("");
@@ -83,6 +78,40 @@ function ApplyPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
+
+  async function handleItrChange(file: File | null) {
+    setItrFile(file);
+    setOcrStatus("");
+    if (!file) return;
+    if (/\.(jpg|jpeg|png|webp)$/i.test(file.name)) {
+      setOcrBusy(true);
+      setOcrStatus("Reading ITR with OCR…");
+      try {
+        const { createWorker } = await import("tesseract.js");
+        const worker = await createWorker("eng");
+        const { data } = await worker.recognize(file);
+        await worker.terminate();
+        const text = data.text || "";
+        const incomeMatch =
+          text.match(/(?:total\s+)?(?:annual\s+)?(?:taxable\s+)?income[^\d]{0,40}₱?\s*([\d,]+(?:\.\d{2})?)/i) ||
+          text.match(/₱\s*([\d,]+(?:\.\d{2})?)/);
+        if (incomeMatch) {
+          const parsed = Number(incomeMatch[1].replace(/,/g, ""));
+          if (!isNaN(parsed) && parsed > 0) {
+            setForm((f) => ({ ...f, annualIncome: String(Math.round(parsed)) }));
+            setOcrStatus(`OCR detected annual income: ₱${Math.round(parsed).toLocaleString()} — verify it matches your ITR.`);
+          } else {
+            setOcrStatus("OCR read the ITR but could not detect income. Please enter it manually.");
+          }
+        } else {
+          setOcrStatus("OCR could not find an income figure on this ITR. Please enter annual family income manually.");
+        }
+      } catch {
+        setOcrStatus("OCR failed for this file. Please enter annual family income manually.");
+      }
+      setOcrBusy(false);
+    }
+  }
 
   useEffect(() => {
     let ignore = false;
@@ -127,7 +156,23 @@ function ApplyPageContent() {
 
       const acct = accountQuery.data;
 
-      if (acct.registration_status !== "Verified") {
+      let regStatus = acct.registration_status;
+      if (regStatus !== "Verified" && acct.student_number) {
+        const { queryRegistrar } = await import("@/lib/supabase/registrar");
+        const reg = await queryRegistrar<{ student_number: string }>((rsb) =>
+          rsb
+            .from("registrar_students")
+            .select("student_number")
+            .eq("student_number", acct.student_number!)
+            .maybeSingle()
+        );
+        if (reg.data) {
+          await sb.from("student_accounts").update({ registration_status: "Verified" }).eq("student_id", acct.student_id);
+          regStatus = "Verified";
+        }
+      }
+
+      if (regStatus !== "Verified") {
         setFatalError("Your account is not yet verified against the Registrar Information System. Please contact the Administrator to get verified before applying for scholarships.");
         setLoading(false);
         return;
@@ -195,6 +240,23 @@ function ApplyPageContent() {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function handleContactChange(raw: string) {
+    let digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("63") && digits.length >= 12) digits = "0" + digits.slice(2);
+    else if (digits.startsWith("630")) digits = "0" + digits.slice(3);
+    if (digits.length > 0 && digits[0] !== "0") digits = "0" + digits;
+    if (digits.length >= 2 && digits[0] === "0" && digits[1] !== "9") {
+      digits = "09" + digits.slice(2);
+    }
+    if (digits.length > 11) digits = digits.slice(0, 11);
+    setForm((f) => ({ ...f, contactNumber: digits }));
+  }
+
+  function handleZipChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+    setForm((f) => ({ ...f, zipcode: digits }));
+  }
+
   function handleDocFileChange(docType: string, file: File | null) {
     setDocFiles((prev) => ({ ...prev, [docType]: file }));
   }
@@ -213,7 +275,7 @@ function ApplyPageContent() {
   function validatePhone(value: string): string | null {
     const cleaned = value.replace(/\D/g, "");
     if (!PH_PHONE_RE.test(cleaned)) {
-      return "Contact number must be a valid PH mobile number: 09XXXXXXXXX (exactly 11 digits).";
+      return "Contact number must be a Philippine mobile number: exactly 09XXXXXXXXX (11 digits, starts with 09).";
     }
     return null;
   }
@@ -265,10 +327,8 @@ function ApplyPageContent() {
     }
 
     const selectedProgram = programs.find((p) => p.scholarship_id === selectedProgramId);
-    const requiredDocs =
-      selectedProgram && parseRequirements(selectedProgram.requirements).length > 0
-        ? parseRequirements(selectedProgram.requirements)
-        : [...DOC_TYPES];
+    const programDocs = selectedProgram ? getProgramRequirementDocs(selectedProgram.requirements) : [];
+    const requiredDocs = programDocs.length > 0 ? programDocs : [...DOC_TYPES];
 
     for (const docType of requiredDocs) {
       const file = docFiles[docType];
@@ -390,10 +450,10 @@ function ApplyPageContent() {
         father_name: form.fatherName.trim(),
         mother_name: form.motherName.trim(),
         street_barangay: form.streetBarangay.trim(),
-        zipcode: form.zipcode.trim(),
+        zipcode: form.zipcode.replace(/\D/g, ""),
         disability: form.disability.trim() || null,
         indigenous_people_group: form.ipGroup.trim() || null,
-        contact_number: form.contactNumber.trim(),
+        contact_number: form.contactNumber.replace(/\D/g, ""),
         email_address: form.email.trim(),
         income_tax_return: itrPath,
         annual_income_family: Number(form.annualIncome) || 0,
@@ -513,15 +573,27 @@ function ApplyPageContent() {
   }
 
   const selectedProgramForDocs = programs.find((p) => p.scholarship_id === selectedProgramId);
+  const programDocsForRender = selectedProgramForDocs
+    ? getProgramRequirementDocs(selectedProgramForDocs.requirements)
+    : [];
   const renderRequiredDocs =
-    selectedProgramForDocs && parseRequirements(selectedProgramForDocs.requirements).length > 0
-      ? parseRequirements(selectedProgramForDocs.requirements)
-      : [...DOC_TYPES];
+    programDocsForRender.length > 0 ? programDocsForRender : [...DOC_TYPES];
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-[#241012]">Submit Application</h1>
-      <p className="mt-1 text-xs text-[#6B5458]">Fill in the form and upload your requirements to apply for a scholarship.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-[#241012]">Submit Application</h1>
+          <p className="mt-1 text-xs text-[#6B5458]">Fill in the form and upload your requirements to apply for a scholarship.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSampleForm(true)}
+          className="shrink-0 rounded-lg border border-[#7B1113]/30 px-3 py-2 text-xs font-bold text-[#7B1113] transition hover:bg-[#7B1113]/5"
+        >
+          View Form Sample
+        </button>
+      </div>
 
       {message && (
         <div
@@ -593,21 +665,44 @@ function ApplyPageContent() {
               Zipcode *
               <input
                 value={form.zipcode}
-                onChange={(e) => handleFormChange("zipcode", e.target.value)}
+                onChange={(e) => handleZipChange(e.target.value)}
+                inputMode="numeric"
+                maxLength={4}
+                pattern="\d{4}"
                 placeholder="9200"
                 required
                 className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
+              <span className="mt-0.5 block text-[10px] font-normal text-[#8B7376]">Digits only — exactly 4 digits (e.g. 9200).</span>
             </label>
             <label className="block text-xs font-semibold text-[#241012]">
               Contact Number *
               <input
                 value={form.contactNumber}
-                onChange={(e) => handleFormChange("contactNumber", e.target.value)}
+                onChange={(e) => handleContactChange(e.target.value)}
+                inputMode="numeric"
+                maxLength={11}
+                pattern="09\d{9}"
                 placeholder="09XXXXXXXXX"
+                autoComplete="tel-national"
                 required
                 className="mt-1 w-full rounded-lg border border-[#241012]/15 bg-white px-3 py-2 text-xs outline-none focus:border-[#7B1113]"
               />
+              <span
+                className={`mt-0.5 block text-[10px] font-normal ${
+                  !form.contactNumber
+                    ? "text-[#8B7376]"
+                    : PH_PHONE_RE.test(form.contactNumber)
+                      ? "text-green-700"
+                      : "text-amber-700"
+                }`}
+              >
+                {!form.contactNumber
+                  ? "Philippine mobile only — exactly 11 digits starting with 09 (e.g. 09171234567)."
+                  : PH_PHONE_RE.test(form.contactNumber)
+                    ? "Valid PH mobile number."
+                    : `Digits only · max 11 · must start with 09 (${form.contactNumber.length}/11).`}
+              </span>
             </label>
             <label className="block text-xs font-semibold text-[#241012]">
               Email Address *
@@ -660,10 +755,13 @@ function ApplyPageContent() {
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp,.pdf"
-                onChange={(e) => setItrFile(e.target.files?.[0] || null)}
+                onChange={(e) => handleItrChange(e.target.files?.[0] || null)}
                 required
                 className="mt-1 w-full rounded-lg border border-dashed border-[#241012]/15 bg-[#FAF7F5] px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#7B1113] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
               />
+              {ocrStatus && (
+                <span className={`mt-1 block text-[11px] ${ocrBusy ? "text-amber-700" : "text-[#6B5458]"}`}>{ocrStatus}</span>
+              )}
             </label>
           </div>
         </div>
@@ -756,6 +854,44 @@ function ApplyPageContent() {
           </button>
         </div>
       </form>
+
+      {showSampleForm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setShowSampleForm(false)}>
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-[#241012]">CHED Application Form — Sample Preview</h2>
+                <p className="mt-1 text-xs text-[#8B7376]">All fields marked * are required. This is how your completed form will look.</p>
+              </div>
+              <button type="button" onClick={() => setShowSampleForm(false)} className="rounded-lg border border-[#241012]/10 px-3 py-1.5 text-xs font-bold text-[#6B5458] hover:bg-[#FAF7F5]">Close</button>
+            </div>
+            <div className="mt-4 space-y-3 rounded-xl border border-[#241012]/[0.06] bg-[#FAF7F5]/60 p-4 text-xs text-[#241012]">
+              <p className="font-bold uppercase tracking-wide text-[#7B1113]">Section 1 — Scholarship Program</p>
+              <p>Choose the open scholarship program and note the deadline.</p>
+              <p className="mt-3 font-bold uppercase tracking-wide text-[#7B1113]">Section 2 — CHED Application Form</p>
+              <ul className="list-inside list-disc space-y-1 text-[#6B5458]">
+                <li>Father&apos;s Full Name *</li>
+                <li>Mother&apos;s Full Name *</li>
+                <li>Street / Barangay *</li>
+                <li>Zipcode *</li>
+                <li>Contact Number *</li>
+                <li>Email Address *</li>
+                <li>Disability / IP Group (optional)</li>
+                <li>Annual Family Income (PHP) *</li>
+                <li>ITR File * — JPG / PNG / PDF, max 10 MB (OCR may auto-detect income)</li>
+              </ul>
+              <p className="mt-3 font-bold uppercase tracking-wide text-[#7B1113]">Section 3 — Supporting Documents</p>
+              <p className="text-[#6B5458]">Upload clear scans of each required document for your program.</p>
+              <p className="mt-3 font-bold uppercase tracking-wide text-[#7B1113]">Section 4 — Academic Records</p>
+              <ul className="list-inside list-disc space-y-1 text-[#6B5458]">
+                <li>Applicant Type * (Freshman / Alumni)</li>
+                <li>SHS GWA or College GPA * (1–100)</li>
+                <li>Proof File *</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

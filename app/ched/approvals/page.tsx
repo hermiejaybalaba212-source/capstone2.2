@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatDate, downloadCsv } from "@/lib/utils";
 import { STATUS_STYLES, REQUIRED_DOCS } from "@/lib/constants";
-import { autoRejectSiblings } from "@/lib/scholarship";
+import { autoRejectSiblings, notifyStudentStatus } from "@/lib/scholarship";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -131,6 +131,8 @@ export default function ChedApprovalsPage() {
       a.application_id === app.application_id ? { ...a, application_status: "Approved" } : a
     ));
 
+    await notifyStudentStatus(app.student_id, app, "Approved");
+
     const res = await autoRejectSiblings([{ application_id: app.application_id, student_id: app.student_id }], applications);
     if (res.rejectedCount > 0) {
       setApplications((prev) => prev.map((a) =>
@@ -138,7 +140,9 @@ export default function ChedApprovalsPage() {
           ? { ...a, application_status: "Not Approved", remarks: `Auto-rejected: already approved for "${app.scholarship_programs?.scholarship_name || "another scholarship"}".` }
           : a
       ));
-      setBusyMsg(`Approved. Auto-rejected ${res.rejectedCount} other application(s) by this student.`);
+      setBusyMsg(`Approved and notified the student. Auto-rejected ${res.rejectedCount} other application(s).`);
+    } else {
+      setBusyMsg("Approved and notified the student. Dashboard and notifications updated.");
     }
   }
 
@@ -151,10 +155,13 @@ export default function ChedApprovalsPage() {
       .update({ application_status: "Pending" })
       .eq("application_id", appId);
     if (upErr) { setBusyMsg(upErr.message); return; }
+    const app = applications.find((a) => a.application_id === appId);
+    if (app) await notifyStudentStatus(app.student_id, app, "Pending");
     setApprovals((prev) => prev.filter((a) => a.application_id !== appId));
     setApplications((prev) => prev.map((a) =>
       a.application_id === appId ? { ...a, application_status: "Pending" } : a
     ));
+    if (app) setBusyMsg("Approval undone. Student was notified the application is pending again.");
   }
 
   function exportFinalList() {

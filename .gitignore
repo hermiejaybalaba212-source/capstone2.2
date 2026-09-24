@@ -44,6 +44,9 @@ next-env.d.ts
 servicerole.txt
 *.service-role*.txt
 .env.local
+SUPABASE-ACCESS.md
+AGENTS.md
+CLAUDE.md
 
 # scratch / working notes
 error.txt

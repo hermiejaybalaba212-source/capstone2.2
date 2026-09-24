@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { getRegistrarSupabase } from "@/lib/supabase/registrar";
+import { queryRegistrar } from "@/lib/supabase/registrar";
 import { formatDateTime } from "@/lib/utils";
 import { STATUS_STYLES, NOTIFICATION_TYPE_STYLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +68,8 @@ export default function StudentDashboardPage() {
   const [alerts, setAlerts] = useState<EarlyWarningAlert[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [applications, setApplications] = useState<AppItem[]>([]);
+  const [studentId, setStudentId] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -114,7 +116,8 @@ export default function StudentDashboardPage() {
         return;
       }
 
-      const studentId = accountQuery.data.student_id;
+      const sid = accountQuery.data.student_id;
+      setStudentId(sid);
 
       const [
         programsQuery,
@@ -131,44 +134,47 @@ export default function StudentDashboardPage() {
         sb
           .from("scholarship_applications")
           .select("application_id, application_status, application_date, scholarship_programs(scholarship_name)")
-          .eq("student_id", studentId)
+          .eq("student_id", sid)
           .order("application_date", { ascending: false }),
         sb
           .from("notifications_announcements")
           .select("*")
-          .eq("student_id", studentId)
+          .eq("student_id", sid)
           .order("date_sent", { ascending: false }),
         sb
           .from("early_warning_alerts")
           .select("*")
-          .eq("student_id", studentId)
+          .eq("student_id", sid)
           .eq("status", "Active")
           .order("warning_date", { ascending: false }),
         sb
           .from("support_academic_records")
           .select("record_id")
-          .eq("student_id", studentId),
+          .eq("student_id", sid),
         sb
           .from("student_accounts")
-          .select("student_number, given_name, last_name")
-          .eq("student_id", studentId)
+          .select("student_id, student_number, given_name, last_name")
+          .eq("student_id", sid)
           .maybeSingle(),
       ]);
 
       if (studentProfile.data) {
-        const { student_number, given_name, last_name } = studentProfile.data;
+        const { student_number, given_name } = studentProfile.data as { student_number?: string | null; given_name?: string | null };
         setFirstName(given_name || "");
-        try {
-          const registrar = getRegistrarSupabase();
-          const { data: regMatch } = await registrar
-            .from("registrar_students")
-            .select("student_number")
-            .eq("student_number", student_number)
-            .eq("given_name", given_name)
-            .eq("last_name", last_name)
-            .maybeSingle();
-          setVerified(!!regMatch);
-        } catch {
+        if (student_number) {
+          const reg = await queryRegistrar<{ student_number: string }>((rsb) =>
+            rsb
+              .from("registrar_students")
+              .select("student_number")
+              .eq("student_number", student_number)
+              .maybeSingle()
+          );
+          const matched = !!reg.data;
+          setVerified(matched);
+          if (matched) {
+            await sb.from("student_accounts").update({ registration_status: "Verified" }).eq("student_id", sid);
+          }
+        } else {
           setVerified(false);
         }
       }
@@ -188,7 +194,7 @@ export default function StudentDashboardPage() {
       setApplications((applicationsQuery.data || []) as AppItem[]);
 
       if (!ignore) setLoading(false);
-      } catch (err) {
+      } catch {
         if (!ignore) {
           setFatalError("Failed to load your dashboard. Please try again.");
           setLoading(false);
@@ -197,7 +203,51 @@ export default function StudentDashboardPage() {
     }
     startFetching();
     return () => { ignore = true; };
-  }, [router]);
+  }, [router, reloadKey]);
+
+  // Live-refresh dashboard so CHED/admin approval updates appear without a manual reload.
+  useEffect(() => {
+    if (!studentId) return;
+    const sb = getSupabase();
+    const channel = sb
+      .channel(`student-dash-${studentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications_announcements", filter: `student_id=eq.${studentId}` },
+        () => setReloadKey((k) => k + 1)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scholarship_applications", filter: `student_id=eq.${studentId}` },
+        () => setReloadKey((k) => k + 1)
+      )
+      .subscribe();
+
+    const poll = window.setInterval(() => setReloadKey((k) => k + 1), 30000);
+    return () => {
+      sb.removeChannel(channel);
+      window.clearInterval(poll);
+    };
+  }, [studentId]);
+
+  // Keep header unread badge fresh even before this page's first load finishes.
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    const sb = getSupabase();
+    async function refreshBadge() {
+      const { data } = await sb
+        .from("notifications_announcements")
+        .select("notification_id, status")
+        .eq("student_id", studentId!);
+      if (cancelled || !data) return;
+      const unread = data.filter((n) => n.status === "Unread").length;
+      setStats((s) => ({ ...s, unreadNotifications: unread }));
+    }
+    refreshBadge();
+    const id = window.setInterval(refreshBadge, 30000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [studentId]);
 
   async function handleVerify() {
     setVerifying(true);
@@ -209,23 +259,23 @@ export default function StudentDashboardPage() {
     if (!userQ.data) { setVerifying(false); return; }
     const studentQ = await sb.from("student_accounts").select("student_id, student_number, given_name, last_name").eq("user_id", userQ.data.user_id).maybeSingle();
     if (!studentQ.data) { setVerifying(false); return; }
-    const { student_id, student_number, given_name, last_name } = studentQ.data;
-    try {
-      const registrar = getRegistrarSupabase();
-      const { data: regMatch } = await registrar
+    const { student_id, student_number } = studentQ.data;
+    if (!student_number) {
+      setVerified(false);
+      setVerifying(false);
+      return;
+    }
+    const reg = await queryRegistrar<{ student_number: string }>((rsb) =>
+      rsb
         .from("registrar_students")
         .select("student_number")
         .eq("student_number", student_number)
-        .eq("given_name", given_name)
-        .eq("last_name", last_name)
-        .maybeSingle();
-      const verified = !!regMatch;
-      setVerified(verified);
-      if (verified) {
-        await sb.from("student_accounts").update({ registration_status: "Verified" }).eq("student_id", student_id);
-      }
-    } catch {
-      setVerified(false);
+        .maybeSingle()
+    );
+    const verified = !!reg.data;
+    setVerified(verified);
+    if (verified) {
+      await sb.from("student_accounts").update({ registration_status: "Verified" }).eq("student_id", student_id);
     }
     setVerifying(false);
   }

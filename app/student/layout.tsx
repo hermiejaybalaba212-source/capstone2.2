@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase/browser";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 
 const MENU_ITEMS: SidebarItem[] = [
-  { label: "Login", href: "/student", icon: "🔐", processFn: "2.0" },
+  { label: "Dashboard", href: "/student", icon: "🏠", processFn: "2.0" },
   { label: "View Available Scholarship Programs", href: "/student/programs", icon: "📋", processFn: "3.0" },
   { label: "Submit / Apply Scholarships", href: "/student/apply", icon: "📝", processFn: "4.0" },
   { label: "Scholarships Status in Dashboard", href: "/student/status", icon: "📈", processFn: "5.0" },

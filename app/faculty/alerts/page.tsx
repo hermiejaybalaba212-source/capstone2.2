@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { getRegistrarSupabase } from "@/lib/supabase/registrar";
+import { queryRegistrar } from "@/lib/supabase/registrar";
 import { formatDateTime } from "@/lib/utils";
 import { STATUS_STYLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +85,6 @@ export default function FacultyAlertsPage() {
     setScanning(true);
     setScanMsg("");
     const sb = getSupabase();
-    const rsb = getRegistrarSupabase();
 
     const { data: students } = await sb
       .from("student_accounts")
@@ -103,15 +102,22 @@ export default function FacultyAlertsPage() {
 
     for (const student of students) {
       if (!student.student_number) continue;
-      const { data: subjects } = await rsb
-        .from("registrar_student_subjects")
-        .select("grade, units")
-        .eq("student_id", (await rsb
+      const regStudent = await queryRegistrar<{ student_id: number }>((rsb) =>
+        rsb
           .from("registrar_students")
           .select("student_id")
           .eq("student_number", student.student_number)
           .maybeSingle()
-        ).data?.student_id ?? -1);
+      );
+      const regStudentId = regStudent.data?.student_id ?? -1;
+      if (regStudentId < 0) continue;
+      const subjectsLookup = await queryRegistrar<{ grade: number | null; units: number | null }[]>((rsb) =>
+        rsb
+          .from("registrar_student_subjects")
+          .select("grade, units")
+          .eq("student_id", regStudentId)
+      );
+      const subjects = subjectsLookup.data;
 
       if (!subjects?.length) continue;
 

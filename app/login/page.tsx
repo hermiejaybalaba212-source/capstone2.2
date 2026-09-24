@@ -81,10 +81,13 @@ export default function LoginPage() {
         return;
       }
 
-      const { data: userRows, error: userError } = await sb
+      let userRows: { role: string; status: string }[] | null = null;
+      let userError: { message: string } | null = null;
+
+      ({ data: userRows, error: userError } = await sb
         .from("users")
         .select("role, status")
-        .eq("auth_user_id", authUserId);
+        .eq("auth_user_id", authUserId));
 
       if (userError) {
         setError("Failed to load user profile: " + userError.message);
@@ -92,13 +95,42 @@ export default function LoginPage() {
         return;
       }
 
-      const staffRow = (userRows || []).find((u) => u.role !== "Student");
-      const userData = staffRow || userRows?.[0];
+      let staffRow = (userRows || []).find((u) => u.role !== "Student");
+      let userData = staffRow || userRows?.[0];
 
       if (!userData) {
-        setError("No user profile found. Contact admin.");
-        setLoading(false);
-        return;
+        // Fallback: look up by email (auth_user_id may be missing/mismatched)
+        const byEmail = await sb
+          .from("users")
+          .select("role, status, auth_user_id")
+          .eq("email", email.trim())
+          .limit(5);
+        const emailRows = byEmail.data || [];
+        staffRow = emailRows.find((u) => u.role !== "Student");
+        userData = staffRow || emailRows[0];
+        if (userData && "auth_user_id" in userData && !userData.auth_user_id) {
+          await sb.from("users").update({ auth_user_id: authUserId }).eq("email", email.trim()).is("auth_user_id", null);
+        }
+      }
+
+      if (!userData) {
+        // Last resort: create the profile from auth user_metadata (e.g. pre-seeded accounts)
+        const meta = authData.user.user_metadata as Record<string, string | undefined> | null;
+        const metaRole = meta?.role === "Admin" || meta?.role === "Faculty" || meta?.role === "CHED" ? meta.role : "Student";
+        const ins = await sb.from("users").insert({
+          auth_user_id: authUserId,
+          email: authData.user.email || email.trim(),
+          username: meta?.username || (authData.user.email || email.trim()).split("@")[0],
+          role: metaRole,
+          status: "Active",
+        }).select("role, status").maybeSingle();
+        if (ins.data) {
+          userData = ins.data;
+        } else {
+          setError("No user profile found. Contact admin. (Your account exists in authentication but has no linked profile row.)");
+          setLoading(false);
+          return;
+        }
       }
 
       if (userData.status === "Inactive") {

@@ -20,6 +20,41 @@ function scholarshipNameFor(app: ApplicationLike | undefined): string {
   return "a scholarship";
 }
 
+export function applicationUpdateMessage(
+  app: ApplicationLike | undefined,
+  status: string,
+  remarks?: string | null
+): string {
+  const scholarship = scholarshipNameFor(app);
+  let base: string;
+  if (status === "Approved") {
+    base = `Congratulations! CHED has approved your application for "${scholarship}". Check your dashboard and Application Status for next steps.`;
+  } else if (status === "Not Approved") {
+    base = `Your application for "${scholarship}" has not been approved. Thank you for applying. You may contact the scholarship office for details.`;
+  } else {
+    base = `Your application for "${scholarship}" is now pending review.`;
+  }
+  const r = (remarks || "").trim();
+  return r ? `${base} Remarks: ${r}` : base;
+}
+
+/** Insert an unread Status Update notification for the student. */
+export async function notifyStudentStatus(
+  studentId: number,
+  app: ApplicationLike | undefined,
+  status: string,
+  remarks?: string | null
+): Promise<void> {
+  const sb = getSupabase();
+  await sb.from("notifications_announcements").insert({
+    student_id: studentId,
+    title: "Application Update",
+    message: applicationUpdateMessage(app, status, remarks),
+    notification_type: "Status Update",
+    status: "Unread",
+  });
+}
+
 async function notifyStudent(studentId: number, approvedAppId: number, approvalScholarship: string, rejectedAppId: number, rejectedScholarship: string) {
   const sb = getSupabase();
   await sb.from("notifications_announcements").insert({

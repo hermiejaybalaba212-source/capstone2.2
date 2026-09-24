@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { getRegistrarSupabase } from "@/lib/supabase/registrar";
+import { queryRegistrar } from "@/lib/supabase/registrar";
 import { formatDate } from "@/lib/utils";
 import { STATUS_STYLES, PROGRAMS, YEAR_LEVELS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,10 @@ interface StudentDetail {
 
 interface EditForm {
   username: string;
+  email: string;
+  student_number: string;
+  given_name: string;
+  last_name: string;
   middle_name: string;
   ext_name: string;
   sex: string;
@@ -58,6 +62,7 @@ export default function UserManagementPage() {
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -71,7 +76,7 @@ export default function UserManagementPage() {
 
       const [usersQ, studentsQ] = await Promise.all([
         sb.from("users").select("*").order("created_at", { ascending: false }),
-        sb.from("student_accounts").select("user_id, student_id, student_number, given_name, last_name, middle_name, ext_name, program_name, year_level, sex, registration_status"),
+        sb.from("student_accounts").select("user_id, student_id, student_number, given_name, last_name, middle_name, ext_name, program_name, year_level, sex, birthdate, registration_status"),
       ]);
 
       if (!usersQ.error) setUsers(usersQ.data || []);
@@ -118,6 +123,10 @@ export default function UserManagementPage() {
     setMessage("");
     setMessageType("");
     const nextStatus = user.status === "Active" ? "Inactive" : "Active";
+    if (nextStatus === "Inactive") {
+      const ok = window.confirm(`Are you sure you want to deactivate ${user.username}?`);
+      if (!ok) return;
+    }
     const sb = getSupabase();
     const { error } = await sb.from("users").update({ status: nextStatus }).eq("user_id", user.user_id);
     if (error) { setMessage(error.message); setMessageType("err"); return; }
@@ -133,31 +142,35 @@ export default function UserManagementPage() {
       return;
     }
     setVerifyingId(user.user_id);
-    const rsb = getRegistrarSupabase();
-    const { data: regRows, error: regErr } = await rsb
-      .from("registrar_students")
-      .select("*")
-      .eq("student_number", student.student_number.trim())
-      .maybeSingle();
+    const regLookup = await queryRegistrar<{ student_id: number; registration_status?: string }>((rsb) =>
+      rsb
+        .from("registrar_students")
+        .select("*")
+        .eq("student_number", student.student_number.trim())
+        .maybeSingle()
+    );
 
-    if (regErr) {
+    if (regLookup.error) {
       setVerifyingId(null);
-      setMessage(`Registrar lookup failed: ${regErr.message}`);
+      setMessage(`Registrar lookup failed: ${regLookup.error.message}`);
       setMessageType("err");
       return;
     }
 
+    const regRows = regLookup.data;
     let isEnrolled = false;
     if (regRows) {
       isEnrolled = !!regRows.registration_status && regRows.registration_status === "Enrolled";
       if (!isEnrolled) {
-        const { data: enrollRows, error: enrollErr } = await rsb
-          .from("registrar_enrollment")
-          .select("enrollment_status")
-          .eq("student_id", regRows.student_id)
-          .eq("enrollment_status", "Enrolled")
-          .limit(1);
-        if (!enrollErr) isEnrolled = !!enrollRows?.length;
+        const enrollLookup = await queryRegistrar<{ enrollment_status: string }[]>((rsb) =>
+          rsb
+            .from("registrar_enrollment")
+            .select("enrollment_status")
+            .eq("student_id", regRows.student_id)
+            .eq("enrollment_status", "Enrolled")
+            .limit(1)
+        );
+        if (!enrollLookup.error) isEnrolled = !!enrollLookup.data?.length;
       }
     }
 
@@ -191,6 +204,10 @@ export default function UserManagementPage() {
     setEditingUserId(user.user_id);
     setEditForm({
       username: user.username,
+      email: user.email || "",
+      student_number: student?.student_number || "",
+      given_name: student?.given_name || "",
+      last_name: student?.last_name || "",
       middle_name: student?.middle_name || "",
       ext_name: student?.ext_name || "",
       sex: student?.sex || "",
@@ -218,6 +235,9 @@ export default function UserManagementPage() {
       const { error: saErr } = await sb
         .from("student_accounts")
         .update({
+          student_number: editForm.student_number.trim() || null,
+          given_name: editForm.given_name.trim() || null,
+          last_name: editForm.last_name.trim() || null,
           middle_name: editForm.middle_name.trim() || null,
           ext_name: editForm.ext_name.trim() || null,
           sex: editForm.sex || null,
@@ -234,6 +254,9 @@ export default function UserManagementPage() {
       }
       setStudents((prev) => prev.map((s) => s.student_id === studentRow.student_id ? {
         ...s,
+        student_number: editForm.student_number.trim() || s.student_number,
+        given_name: editForm.given_name.trim() || s.given_name,
+        last_name: editForm.last_name.trim() || s.last_name,
         middle_name: editForm.middle_name.trim() || undefined,
         ext_name: editForm.ext_name.trim() || undefined,
         sex: editForm.sex || undefined,
@@ -245,7 +268,7 @@ export default function UserManagementPage() {
 
     const { error: uErr } = await sb
       .from("users")
-      .update({ username: editForm.username.trim() })
+      .update({ username: editForm.username.trim(), email: editForm.email.trim() })
       .eq("user_id", editingUserId);
     if (uErr) {
       setSavingEdit(false);
@@ -253,13 +276,62 @@ export default function UserManagementPage() {
       setMessageType("err");
       return;
     }
-    setUsers((prev) => prev.map((u) => u.user_id === editingUserId ? { ...u, username: editForm.username.trim() } : u));
+    setUsers((prev) => prev.map((u) => u.user_id === editingUserId ? { ...u, username: editForm.username.trim(), email: editForm.email.trim() } : u));
 
     setSavingEdit(false);
     setEditingUserId(null);
     setEditForm(null);
     setMessage("Account details updated successfully.");
     setMessageType("ok");
+  }
+
+  async function handleDelete(user: User) {
+    setMessage("");
+    setMessageType("");
+    const label = user.email || user.username;
+    const ok = window.confirm(
+      `Delete "${label}" permanently?\n\nThis removes the user profile, linked student account (if any), applications, and login credentials. This cannot be undone.`
+    );
+    if (!ok) return;
+
+    setDeletingUserId(user.user_id);
+    try {
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        setMessage("Session expired. Please log in again.");
+        setMessageType("err");
+        return;
+      }
+
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ user_id: user.user_id }),
+      });
+      const payload = await res.json().catch(() => ({ error: "Invalid server response." }));
+
+      if (!res.ok || payload.error) {
+        setMessage(payload.error || "Could not delete this user.");
+        setMessageType("err");
+        return;
+      }
+
+      setUsers((prev) => prev.filter((u) => u.user_id !== user.user_id));
+      setStudents((prev) => prev.filter((s) => s.user_id !== user.user_id));
+      setMessage(
+        `Deleted "${label}"${payload.auth_deleted ? " (login removed)" : " (profile removed)"}.`
+      );
+      setMessageType("ok");
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : "Delete failed.");
+      setMessageType("err");
+    } finally {
+      setDeletingUserId(null);
+    }
   }
 
   function exportCsv() {
@@ -446,6 +518,14 @@ export default function UserManagementPage() {
                         >
                           {u.status === "Active" ? "Deactivate" : "Activate"}
                         </button>
+                        <button
+                          onClick={() => handleDelete(u)}
+                          disabled={isMe || deletingUserId === u.user_id}
+                          className="rounded-lg border border-red-300 px-3 py-1.5 text-[11px] font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Permanently delete this account, linked records, and login"
+                        >
+                          {deletingUserId === u.user_id ? "Deleting..." : "Delete"}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -470,6 +550,46 @@ export default function UserManagementPage() {
                   type="text"
                   value={editForm.username}
                   onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                  required
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012] sm:col-span-2">
+                Email
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Student Number
+                <input
+                  type="text"
+                  value={editForm.student_number}
+                  onChange={(e) => setEditForm({ ...editForm, student_number: e.target.value })}
+                  placeholder="e.g. 2026-00010"
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Given Name
+                <input
+                  type="text"
+                  value={editForm.given_name}
+                  onChange={(e) => setEditForm({ ...editForm, given_name: e.target.value })}
+                  required
+                  className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#241012]">
+                Last Name
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
                   required
                   className="mt-1 w-full rounded-lg border border-[#241012]/[0.06] bg-white px-3 py-2.5 text-xs outline-none focus:border-[#7B1113]"
                 />

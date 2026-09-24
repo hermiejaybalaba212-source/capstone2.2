@@ -42,6 +42,8 @@ export default function ApplicationStatusPage() {
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [studentId, setStudentId] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -80,12 +82,13 @@ export default function ApplicationStatusPage() {
         return;
       }
 
-      const studentId = accountQuery.data.student_id;
+      const sid = accountQuery.data.student_id;
+      setStudentId(sid);
 
       const { data, error } = await sb
         .from("scholarship_applications")
         .select("*, scholarship_programs(scholarship_name)")
-        .eq("student_id", studentId)
+        .eq("student_id", sid)
         .order("application_date", { ascending: false });
 
       const appIds = data?.map((a: { application_id: number }) => a.application_id) ?? [];
@@ -105,7 +108,31 @@ export default function ApplicationStatusPage() {
     }
     startFetching();
     return () => { ignore = true; };
-  }, [router]);
+  }, [router, reloadKey]);
+
+  // Live-refresh when CHED/admin updates approval or application status.
+  useEffect(() => {
+    if (!studentId) return;
+    const sb = getSupabase();
+    const channel = sb
+      .channel(`student-status-${studentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scholarship_applications", filter: `student_id=eq.${studentId}` },
+        () => setReloadKey((k) => k + 1)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scholarship_approval" },
+        () => setReloadKey((k) => k + 1)
+      )
+      .subscribe();
+    const poll = window.setInterval(() => setReloadKey((k) => k + 1), 30000);
+    return () => {
+      sb.removeChannel(channel);
+      window.clearInterval(poll);
+    };
+  }, [studentId]);
 
   function getProgressWidth(status: string): number {
     const idx = STATUS_STEPS.indexOf(status);

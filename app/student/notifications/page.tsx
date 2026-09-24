@@ -27,6 +27,7 @@ export default function NotificationsPage() {
   const [studentId, setStudentId] = useState<number | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
   const PAGE_SIZE = 10;
 
   useEffect(() => {
@@ -83,7 +84,26 @@ export default function NotificationsPage() {
     }
     startFetching();
     return () => { ignore = true; };
-  }, [router]);
+  }, [router, reloadKey]);
+
+  // Live-refresh when CHED/admin sends approval or status updates.
+  useEffect(() => {
+    if (!studentId) return;
+    const sb = getSupabase();
+    const channel = sb
+      .channel(`student-notifs-${studentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications_announcements", filter: `student_id=eq.${studentId}` },
+        () => setReloadKey((k) => k + 1)
+      )
+      .subscribe();
+    const poll = window.setInterval(() => setReloadKey((k) => k + 1), 30000);
+    return () => {
+      sb.removeChannel(channel);
+      window.clearInterval(poll);
+    };
+  }, [studentId]);
 
   async function markAllAsRead() {
     if (!studentId) return;

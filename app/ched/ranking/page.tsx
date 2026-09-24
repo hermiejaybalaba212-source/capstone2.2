@@ -6,7 +6,7 @@ import { getSupabase } from "@/lib/supabase/browser";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { downloadCsv } from "@/lib/utils";
-import { autoRejectSiblings } from "@/lib/scholarship";
+import { autoRejectSiblings, notifyStudentStatus } from "@/lib/scholarship";
 
 interface Ranking {
   ranking_id: number;
@@ -182,6 +182,7 @@ export default function ChedRankingPage() {
     const sb = getSupabase();
     const now = new Date().toISOString();
     const approvedTargets = [];
+    let notified = 0;
     for (const appId of selected) {
       await sb.from("scholarship_approval").delete().eq("application_id", appId);
       const { error } = await sb.from("scholarship_approval").insert({
@@ -190,11 +191,15 @@ export default function ChedRankingPage() {
       if (error) { setMessage(`Error approving #${appId}: ${error.message}`); setSaving(false); return; }
       await sb.from("scholarship_applications").update({ application_status: "Approved" }).eq("application_id", appId);
       const app = appFor(appId);
-      if (app) approvedTargets.push({ application_id: appId, student_id: app.student_id });
+      if (app) {
+        approvedTargets.push({ application_id: appId, student_id: app.student_id });
+        await notifyStudentStatus(app.student_id, app, "Approved");
+        notified += 1;
+      }
     }
     const res = await autoRejectSiblings(approvedTargets, applications);
     setSelected(new Set());
-    setMessage(`Approved ${selected.size} applicant(s).${res.rejectedCount > 0 ? ` Auto-rejected ${res.rejectedCount} other application(s).` : ""}`);
+    setMessage(`Approved ${selected.size} applicant(s) and notified ${notified} student(s). Dashboard/status updates are live.${res.rejectedCount > 0 ? ` Auto-rejected ${res.rejectedCount} other application(s).` : ""}`);
     setSaving(false);
     setReloadKey((k) => k + 1);
   }
@@ -205,6 +210,7 @@ export default function ChedRankingPage() {
     setMessage("");
     const sb = getSupabase();
     const now = new Date().toISOString();
+    let notified = 0;
     for (const appId of selected) {
       await sb.from("scholarship_approval").delete().eq("application_id", appId);
       const { error } = await sb.from("scholarship_approval").insert({
@@ -212,9 +218,14 @@ export default function ChedRankingPage() {
       });
       if (error) { setMessage(`Error rejecting #${appId}: ${error.message}`); setSaving(false); return; }
       await sb.from("scholarship_applications").update({ application_status: "Not Approved" }).eq("application_id", appId);
+      const app = appFor(appId);
+      if (app) {
+        await notifyStudentStatus(app.student_id, app, "Not Approved");
+        notified += 1;
+      }
     }
     setSelected(new Set());
-    setMessage(`Rejected ${selected.size} applicant(s).`);
+    setMessage(`Rejected ${selected.size} applicant(s) and notified ${notified} student(s).`);
     setSaving(false);
     setReloadKey((k) => k + 1);
   }

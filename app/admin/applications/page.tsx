@@ -18,7 +18,6 @@ const FILTER_TABS = [
 ] as const;
 
 const STATUS_ACTIONS = [
-  { status: "Approved", label: "Approve", active: "bg-green-600 border-green-600 text-white", idle: "border-green-300 text-green-700 hover:bg-green-50" },
   { status: "Not Approved", label: "Not Approve", active: "bg-red-600 border-red-600 text-white", idle: "border-red-300 text-red-700 hover:bg-red-50" },
   { status: "Pending", label: "Pending", active: "bg-amber-500 border-amber-500 text-white", idle: "border-amber-300 text-amber-700 hover:bg-amber-50" },
 ] as const;
@@ -206,6 +205,10 @@ export default function ApplicationsPage() {
 
   async function quickStatus(app: ScholarshipApplication, targetStatus: string) {
     if (app.application_status === targetStatus || savingId !== null) return;
+    if (targetStatus === "Approved") {
+      setMessage("Only CHED can approve applications. Admin can only notify, validate against the Registrar, or set Not Approved / Pending.");
+      return;
+    }
     setSavingId(app.application_id);
     setMessage("");
     const sb = getSupabase();
@@ -242,6 +245,11 @@ export default function ApplicationsPage() {
     const draft = statusDraft[app.application_id] || { status: app.application_status, remarks: app.remarks || "" };
     const newStatus = draft.status;
     const newRemarks = draft.remarks.trim() || null;
+    if (newStatus === "Approved" && app.application_status !== "Approved") {
+      setMessage("Only CHED can approve applications. Admin can only notify, validate against the Registrar, or set Not Approved / Pending.");
+      setSavingId(null);
+      return;
+    }
     const sb = getSupabase();
     const { error } = await sb.from("scholarship_applications")
       .update({ application_status: newStatus, remarks: newRemarks })
@@ -303,6 +311,10 @@ export default function ApplicationsPage() {
 
   async function batchStatus(targetStatus: string, scopeIds: number[]) {
     if (!scopeIds.length || batchBusy) return;
+    if (targetStatus === "Approved") {
+      setMessage("Only CHED can approve applications. Admin can only notify, validate against the Registrar, or set Not Approved / Pending.");
+      return;
+    }
     setBatchBusy(true);
     setMessage("");
     const sb = getSupabase();
@@ -503,13 +515,9 @@ export default function ApplicationsPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => batchStatus("Approved", [...selectedIds])}
-                disabled={!selectedIds.size || batchBusy}
-                className="rounded-lg bg-green-600 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-green-700 disabled:opacity-40"
-              >
-                Approve selected
-              </button>
+              <span className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-[11px] font-bold text-green-700" title="Only CHED can approve applications">
+                Approve: CHED only
+              </span>
               <button
                 onClick={() => batchStatus("Not Approved", [...selectedIds])}
                 disabled={!selectedIds.size || batchBusy}
@@ -576,7 +584,7 @@ export default function ApplicationsPage() {
                         onClick={() => quickStatus(app, action.status)}
                         disabled={savingId === app.application_id}
                         className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition disabled:opacity-40 ${currentStatus === action.status ? action.active : action.idle}`}
-                        title={action.status === "Approved" ? "Approve this application" : action.status === "Not Approved" ? "Not approve this application" : "Set back to pending"}
+                        title={action.status === "Not Approved" ? "Not approve this application" : "Set back to pending"}
                       >
                         {action.label}
                       </button>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { getRegistrarSupabase } from "@/lib/supabase/registrar";
+import { queryRegistrar } from "@/lib/supabase/registrar";
 import { PROGRAMS, YEAR_LEVELS } from "@/lib/constants";
 
 interface Form {
@@ -150,17 +150,14 @@ export default function RegisterPage() {
 
       let isVerified = false;
       if (form.studentNumber.trim()) {
-        try {
-          const rsb = getRegistrarSupabase();
-          const { data: regMatch } = await rsb
+        const reg = await queryRegistrar<{ student_number: string; registration_status?: string }>((rsb) =>
+          rsb
             .from("registrar_students")
-            .select("student_number")
+            .select("student_number, registration_status")
             .eq("student_number", form.studentNumber.trim())
-            .eq("given_name", form.givenName.trim())
-            .eq("last_name", form.lastName.trim())
-            .maybeSingle();
-          isVerified = !!regMatch;
-        } catch { /* registrar unreachable, stays unverified */ }
+            .maybeSingle()
+        );
+        isVerified = !!reg.data;
       }
 
       const sb2 = getSupabase();
@@ -209,12 +206,12 @@ export default function RegisterPage() {
           .maybeSingle();
         if (reErr || !reFound) throw new Error("Account created but we could not link your records. Please contact support.");
         assignedUserId = reFound.user_id;
-        user_id_payload = { user_id: assignedUserId, given_name: form.givenName.trim(), last_name: form.lastName.trim(), student_number: form.studentNumber.trim(), program_name: form.programName.trim(), year_level: form.yearLevel.trim(), applicant_type: form.applicantType, sex: form.sex, birthdate: form.birthdate || null };
+        user_id_payload = { user_id: assignedUserId, given_name: form.givenName.trim(), last_name: form.lastName.trim(), student_number: form.studentNumber.trim(), program_name: form.programName.trim(), year_level: form.yearLevel.trim(), applicant_type: form.applicantType, sex: form.sex, birthdate: form.birthdate || null, registration_status: isVerified ? "Verified" : "Unverified" };
       }
 
       // Ensure a student_account row exists (trigger normally creates it too).
       if (user_id_payload) {
-        await sb2.from("student_accounts").insert(user_id_payload);
+        await sb2.from("student_accounts").insert(user_id_payload).select("student_id").maybeSingle();
       } else {
         const { data: foundStudent } = await sb2
           .from("student_accounts")
@@ -243,8 +240,12 @@ export default function RegisterPage() {
         }
       }
 
+      // signUp may auto-create a session (email confirmation disabled).
+      // Sign out so middleware does not bounce /login → / after redirect.
+      try { await sb2.auth.signOut(); } catch { /* ignore */ }
+
       if (isVerified) {
-        setSuccess("Your account has been created and verified against the Registrar Information System. You can now log in and apply for scholarships.");
+        setSuccess("Your account has been created and verified against the Registrar — student number matched. You can now log in and apply for scholarships.");
       } else {
         setSuccess("Your account has been created. Your student number was not found in the Registrar database — you can still log in, but you must contact the admin to be verified before applying for scholarships.");
       }

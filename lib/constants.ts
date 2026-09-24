@@ -32,6 +32,58 @@ export const PROGRAM_REQUIREMENT_OPTIONS = [
   "Parent Waiver / Consent",
 ] as const;
 
+/** Split a stored requirements string on | , or ; so legacy free-text still loads. */
+export function parseProgramRequirements(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(/[|,;]/)
+    .map((r) => r.trim())
+    .filter(Boolean);
+}
+
+/** Map a free-text requirement to a canonical PROGRAM_REQUIREMENT_OPTIONS item. */
+export function matchRequirementOption(raw: string): string | null {
+  const s = raw.trim().toLowerCase();
+  if (!s) return null;
+
+  const exact = PROGRAM_REQUIREMENT_OPTIONS.find((o) => o.toLowerCase() === s);
+  if (exact) return exact;
+
+  if (/\bcor\b|certificate of registration/.test(s)) return "COR";
+  if (/valid\s*i\.?d|national id|school id/.test(s)) return "Valid ID";
+  if (/signature/.test(s)) return "Signature Form";
+  if (/enrollment/.test(s)) return "Certificate of Enrollment";
+  if (/transcript|\btor\b/.test(s)) return "Transcript of Records";
+  if (/form\s*138|report card/.test(s)) return "Report Card (Form 138)";
+  if (/good moral|moral certificate/.test(s)) return "Good Moral Certificate";
+  if (/barangay/.test(s)) return "Barangay Certificate of Residency";
+  if (/\bitr\b|income tax/.test(s)) return "Income Tax Return (ITR)";
+  if (/indigency/.test(s)) return "Certificate of Indigency";
+  if (/medical/.test(s)) return "Medical Certificate";
+  if (/waiver|consent|parent/.test(s)) return "Parent Waiver / Consent";
+
+  // Academic GWA/GPA is collected in the Academic Records section, not as a file slot.
+  if (/academic record|shs gwa|college gpa|gwa|gpa/.test(s)) return null;
+
+  return null;
+}
+
+/** Parse stored requirements and keep only canonical option labels (deduped, stable order). */
+export function getProgramRequirementDocs(value?: string | null): string[] {
+  const matched = parseProgramRequirements(value)
+    .map(matchRequirementOption)
+    .filter((x): x is string => !!x);
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const opt of PROGRAM_REQUIREMENT_OPTIONS) {
+    if (matched.includes(opt) && !seen.has(opt)) {
+      seen.add(opt);
+      ordered.push(opt);
+    }
+  }
+  return ordered;
+}
+
 export const DISABILITY_OPTIONS = [
   "None",
   "Blind",

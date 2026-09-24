@@ -98,18 +98,40 @@ export default function MLRankingPage() {
       }
       if (!session) { router.push("/login"); return; }
 
-      const [chedQ, pendingQ] = await Promise.all([
+      const [chedQ, acadQ, pendingQ] = await Promise.all([
         sb.from("ched_form_input")
-          .select("ched_form_id, application_id, annual_income_family, income_tax_return, shs_gwa, college_gpa, year_level, sex, high_need")
+          .select("ched_form_id, application_id, annual_income_family, income_tax_return, year_level, sex")
           .order("ched_form_id", { ascending: false }),
-        sb.from("scholarship_applications").select("application_id").eq("application_status", "Pending"),
+        sb.from("support_academic_records")
+          .select("student_id, shs_gwa, college_gpa, applicant_type"),
+        sb.from("scholarship_applications").select("application_id, student_id").eq("application_status", "Pending"),
       ]);
 
-      if (!chedQ.error) setChedForms((chedQ.data || []) as ChedForm[]);
+      const acadByStudent = new Map<number, { shs_gwa?: number | null; college_gpa?: number | null }>();
+      (acadQ.data || []).forEach((r) => {
+        if (r.student_id != null) acadByStudent.set(Number(r.student_id), r);
+      });
+      const pendingByApp = new Map<number, number>();
+      (pendingQ.data || []).forEach((r) => {
+        pendingByApp.set(Number(r.application_id), Number(r.student_id));
+      });
+      const mergedForms = (chedQ.data || []).map((c) => {
+        const studentId = pendingByApp.get(Number(c.application_id));
+        const acad = studentId != null ? acadByStudent.get(studentId) : undefined;
+        return {
+          ...c,
+          shs_gwa: acad?.shs_gwa ?? undefined,
+          college_gpa: acad?.college_gpa ?? undefined,
+          high_need: c.annual_income_family != null && Number(c.annual_income_family) < 150000 ? "Yes" : "No",
+        };
+      });
+
+      if (!chedQ.error) setChedForms(mergedForms as ChedForm[]);
       setPendingCount(pendingQ.data?.length ?? 0);
       const queryErrors = [
         chedQ.error && `CHED forms: ${chedQ.error.message}`,
         pendingQ.error && `pending applications: ${pendingQ.error.message}`,
+        acadQ.error && `academic records: ${acadQ.error.message}`,
       ].filter(Boolean);
       if (queryErrors.length) setMessage(`Some ranking data could not be loaded: ${queryErrors.join("; ")}`);
       if (!ignore) setLoading(false);
@@ -169,6 +191,15 @@ export default function MLRankingPage() {
         };
       });
 
+      const eligible = applicants.filter((a) => a.hasItr && a.annual_income_family != null);
+      const excluded = applicants.length - eligible.length;
+
+      if (!eligible.length) {
+        setMessage("No pending applicants have an uploaded ITR with income data. ITR is required for ranking — students must upload an ITR before they can be ranked.");
+        setRunning(false);
+        return;
+      }
+
       const res = await fetch(`${ML_API}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,7 +208,7 @@ export default function MLRankingPage() {
           n_samples: 400,
           n_trees: 100,
           seed: 2026,
-          applicants,
+          applicants: eligible,
         }),
       });
 
@@ -195,11 +226,11 @@ export default function MLRankingPage() {
         total_samples: data.train?.total_samples ?? 0,
       };
       const preds = Array.isArray(data.predictions) ? data.predictions : [];
-      if (preds.length !== applicants.length) {
+      if (preds.length !== eligible.length) {
         throw new Error("Prediction count did not match the number of applicants.");
       }
 
-      const results: RankedRow[] = applicants.map((app, i) => {
+      const results: RankedRow[] = eligible.map((app, i) => {
         const pred = preds[i];
         return {
           application_id: app.application_id,
@@ -241,8 +272,8 @@ export default function MLRankingPage() {
       const { error: saveErr } = await sb.from("ranking_result").insert(rows);
       setMessage(
         saveErr
-          ? `Ranking complete — ${results.length} applicants prioritized, but auto-save to CHED failed: ${saveErr.message}`
-          : `Ranking complete — ${results.length} applicants prioritized and sent to CHED automatically. Model accuracy: ${(trainResult.accuracy * 100).toFixed(1)}%`
+          ? `Ranking complete — ${results.length} applicants prioritized (ITR required; ${excluded} excluded for missing ITR), but auto-save to CHED failed: ${saveErr.message}`
+          : `Ranking complete — ${results.length} applicants prioritized and sent to CHED automatically (ITR required; ${excluded} excluded for missing ITR). Model accuracy: ${(trainResult.accuracy * 100).toFixed(1)}%`
       );
     } catch (err: unknown) {
       setMessage(err instanceof Error ? err.message : "Failed to run ranking.");

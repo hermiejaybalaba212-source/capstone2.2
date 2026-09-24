@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { getRegistrarSupabase } from "@/lib/supabase/registrar";
+import { queryRegistrar } from "@/lib/supabase/registrar";
 import { formatDateTime, downloadCsv } from "@/lib/utils";
 import { STATUS_STYLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -183,36 +183,41 @@ export default function ApprovalsPage() {
     setValidatingId(approval.application_id);
 
     const app = getApp(approval.application_id);
-    if (!app?.student_accounts?.student_number) {
+    const studentNumber = app?.student_accounts?.student_number?.trim();
+    if (!studentNumber) {
       setMessage("Student number not found for this application.");
       setValidatingId(null);
       return;
     }
 
-    const rsb = getRegistrarSupabase();
-    const { data: regRows, error: regErr } = await rsb
-      .from("registrar_students")
-      .select("*")
-      .eq("student_number", app.student_accounts.student_number.trim())
-      .limit(1);
+    const regStudentLookup = await queryRegistrar<{ student_id: number; registration_status?: string }>((rsb) =>
+      rsb
+        .from("registrar_students")
+        .select("*")
+        .eq("student_number", studentNumber)
+        .limit(1)
+        .maybeSingle()
+    );
 
-    const regStudent = regRows?.[0] ?? null;
+    const regStudent = regStudentLookup.data ?? null;
 
-    if (regErr) {
-      setMessage(`Registrar lookup failed: ${regErr.message}`);
+    if (regStudentLookup.error) {
+      setMessage(`Registrar lookup failed: ${regStudentLookup.error.message}`);
       setValidatingId(null);
       return;
     }
 
     let isEnrolled = !!regStudent?.registration_status && regStudent.registration_status === "Enrolled";
     if (regStudent && !isEnrolled) {
-      const { data: enrollRows, error: enrollErr } = await rsb
-        .from("registrar_enrollment")
-        .select("enrollment_status")
-        .eq("student_id", regStudent.student_id)
-        .eq("enrollment_status", "Enrolled")
-        .limit(1);
-      if (!enrollErr) isEnrolled = !!enrollRows?.length;
+      const enrollLookup = await queryRegistrar<{ enrollment_status: string }[]>((rsb) =>
+        rsb
+          .from("registrar_enrollment")
+          .select("enrollment_status")
+          .eq("student_id", regStudent.student_id)
+          .eq("enrollment_status", "Enrolled")
+          .limit(1)
+      );
+      if (!enrollLookup.error) isEnrolled = !!enrollLookup.data?.length;
     }
 
     const sb = getSupabase();
@@ -227,7 +232,7 @@ export default function ApprovalsPage() {
       await sb
         .from("student_accounts")
         .update({ registration_status: "Verified" })
-        .eq("student_number", app.student_accounts.student_number.trim());
+        .eq("student_number", studentNumber);
 
       setApprovals((prev) => prev.map((a) =>
         a.application_id === approval.application_id ? { ...a, validation_status: "Validated" } : a
