@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/browser";
-import { queryRegistrar } from "@/lib/supabase/registrar";
 import { formatDateTime } from "@/lib/utils";
 import { STATUS_STYLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -84,83 +83,29 @@ export default function FacultyAlertsPage() {
   async function scanRegistrarGrades() {
     setScanning(true);
     setScanMsg("");
-    const sb = getSupabase();
-
-    const { data: students } = await sb
-      .from("student_accounts")
-      .select("student_id, student_number, given_name, last_name")
-      .eq("registration_status", "Verified");
-
-    if (!students?.length) {
-      setScanMsg("No verified students found.");
-      setScanning(false);
-      return;
-    }
-
-    let alertsCreated = 0;
-    const MAINTAINING_GRADE_PCT = 93;
-
-    for (const student of students) {
-      if (!student.student_number) continue;
-      const regStudent = await queryRegistrar<{ student_id: number }>((rsb) =>
-        rsb
-          .from("registrar_students")
-          .select("student_id")
-          .eq("student_number", student.student_number)
-          .maybeSingle()
-      );
-      const regStudentId = regStudent.data?.student_id ?? -1;
-      if (regStudentId < 0) continue;
-      const subjectsLookup = await queryRegistrar<{ grade: number | null; units: number | null }[]>((rsb) =>
-        rsb
-          .from("registrar_student_subjects")
-          .select("grade, units")
-          .eq("student_id", regStudentId)
-      );
-      const subjects = subjectsLookup.data;
-
-      if (!subjects?.length) continue;
-
-      let totalUnits = 0;
-      let totalWeighted = 0;
-      let validGrades = 0;
-      for (const s of subjects) {
-        const grade = Number(s.grade);
-        if (s.grade == null || Number.isNaN(grade)) continue;
-        const units = Number(s.units) || 3;
-        totalWeighted += grade * units;
-        totalUnits += units;
-        validGrades++;
+    try {
+      const sb = getSupabase();
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        setScanMsg("Session expired. Please log in again.");
+        setScanning(false);
+        return;
       }
-      if (totalUnits === 0 || validGrades === 0) continue;
-      const avgGrade = totalWeighted / totalUnits;
-      const percentage = ((5 - avgGrade) / 4) * 100;
 
-      if (percentage < MAINTAINING_GRADE_PCT) {
-        const { data: existing } = await sb
-          .from("early_warning_alerts")
-          .select("warning_id")
-          .eq("student_id", student.student_id)
-          .eq("status", "Active")
-          .maybeSingle();
-
-        if (!existing) {
-          const { error: insErr } = await sb.from("early_warning_alerts").insert({
-            student_id: student.student_id,
-            status: "Active",
-            risk_level: percentage < 80 ? "High" : percentage < 90 ? "Medium" : "Low",
-            warning_message: `Academic average of ${percentage.toFixed(1)}% is below the ${MAINTAINING_GRADE_PCT}% maintaining grade requirement.`,
-            gpa: Number(avgGrade.toFixed(2)),
-            average_grade: Number(percentage.toFixed(1)),
-          });
-          if (!insErr) alertsCreated++;
-        }
+      const res = await fetch("/api/faculty/scan-alerts", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      const payload = await res.json();
+      if (!res.ok || payload.error) {
+        setScanMsg(payload.error || "Scan failed.");
+      } else {
+        setScanMsg(payload.message || "Scan complete.");
       }
+    } catch {
+      setScanMsg("Scan failed. Please try again.");
     }
-
-    setScanMsg(alertsCreated > 0
-      ? `Scan complete. ${alertsCreated} new early warning alert(s) created for students below ${MAINTAINING_GRADE_PCT}%.`
-      : `Scan complete. All students are above the ${MAINTAINING_GRADE_PCT}% maintaining grade.`);
     setScanning(false);
     setReloadKey((k) => k + 1);
   }

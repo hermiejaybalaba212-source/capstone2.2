@@ -62,6 +62,10 @@ dev-server.log
 dev-server.pid
 *.log
 
+# tesseract OCR language data (auto-downloaded)
+eng.traineddata
+*.traineddata
+
 # local working files / DB dumps & notes (may contain test credentials)
 *.sql
 *.docx
